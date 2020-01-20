@@ -26,3 +26,7 @@ build*/
 *.rar
 *.tar
 *.zip
+
+# NIR
+debug/
+.vscode/
