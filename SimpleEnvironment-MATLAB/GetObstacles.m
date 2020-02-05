@@ -1,20 +1,37 @@
-function [obstacles, doors] = GetObstacles(roomSize, doorSize, envGrid)
-% obstacles are walls with doors in the middle of the room (cell array)
+function [obstacles, doors] = GetObstacles(homeSize, nRooms, doorSize, envGrid)
+% obstacles are walls with doors in home (cell array)
+wallsLocationRatio = 1/sqrt(nRooms);
+nWalls = 1/wallsLocationRatio-1;
+nDoors = 1/wallsLocationRatio;
 
-nPointsInObstacle = (roomSize/2-doorSize)/envGrid;
-% Horizontal wall
-doorLocation1 = envGrid*round(rand*(roomSize/2-doorSize)/envGrid);
-doorLocation2 = envGrid*round((roomSize/2+rand*(roomSize/2-doorSize))/envGrid);
-doors = [doorLocation1 roomSize/2; doorLocation2 roomSize/2];
+nPointsInObstacle = (homeSize*wallsLocationRatio-doorSize)/envGrid;
 
+doors = [];
+obstacles = [];
+% Horizontal walls
+for p = 1:nWalls
+    yCord = wallsLocationRatio*p*homeSize;
+    for k = 1:nDoors
+        boundaries = [(k-1)*wallsLocationRatio*homeSize k*wallsLocationRatio*homeSize];
+        doorLocation = envGrid*round((rand*(diff(boundaries)-doorSize)+boundaries(1))/envGrid);
+        doors(end+1,:) = [doorLocation yCord];
+        xCords = transpose(boundaries(1):envGrid:doorLocation-envGrid);
+        obstacles{end+1} = [xCords yCord*ones(size(xCords))];
+        xCords = transpose((doorLocation+doorSize):envGrid:boundaries(2));
+        obstacles{end+1} = [xCords yCord*ones(size(xCords))];
+    end
+end
 
-obstacles{1} = [transpose([0:envGrid:doorLocation1-envGrid (doorLocation1+doorSize+envGrid):envGrid:roomSize/2]) roomSize/2*ones(nPointsInObstacle,1)];
-obstacles{1} = [obstacles{1}; [transpose([roomSize/2+envGrid:envGrid:doorLocation2-envGrid (doorLocation2+doorSize+envGrid):envGrid:roomSize]) roomSize/2*ones(nPointsInObstacle-1,1)]];
-
-% Vertical wall
-doorLocation1 = envGrid*round(rand*(roomSize/2-doorSize)/envGrid);
-doorLocation2 = envGrid*round((roomSize/2+rand*(roomSize/2-doorSize))/envGrid);
-doors = [doors; roomSize/2 doorLocation1; roomSize/2 doorLocation2];
-
-obstacles{2} = [roomSize/2*ones(nPointsInObstacle,1) transpose([0:envGrid:doorLocation1-envGrid (doorLocation1+doorSize+envGrid):envGrid:roomSize/2])];
-obstacles{2} = [obstacles{2}; [roomSize/2*ones(nPointsInObstacle-1,1) transpose([roomSize/2+envGrid:envGrid:doorLocation2-envGrid (doorLocation2+doorSize+envGrid):envGrid:roomSize])]];
+% Vertical walls
+for p = 1:nWalls
+    xCord = wallsLocationRatio*p*homeSize;
+    for k = 1:nDoors
+        boundaries = [(k-1)*wallsLocationRatio*homeSize k*wallsLocationRatio*homeSize];
+        doorLocation = envGrid*round((rand*(diff(boundaries)-doorSize)+boundaries(1))/envGrid);
+        doors(end+1,:) = [xCord, doorLocation];
+        yCords = transpose(boundaries(1):envGrid:doorLocation-envGrid);
+        obstacles{end+1} = [xCord*ones(size(yCords)) yCords];
+        yCords = transpose((doorLocation+doorSize):envGrid:boundaries(2));
+        obstacles{end+1} = [xCord*ones(size(yCords)) yCords];
+    end
+end

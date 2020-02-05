@@ -1,41 +1,29 @@
-function isFree = CollisionDetector(p1, p2, doors, envGrid, doorSize)
+function isFree = CollisionDetector(p1, p2, obstacles)
 if p1(1) > p2(1)
    tmp = p2;
    p2 = p1;
    p1 = tmp;
 end
 isFree = true;
-halfRoomSize = doors(1,2);
 a = (p2(2)-p1(2))/(p2(1)-p1(1));
-if isinf(a)
-    if p1(1) < doors(1,1) || (p1(1) > doors(1,1)+doorSize && p1(1) < doors(2,1))...
-            || p1(1) > doors(2,1)+1
-        isFree = false;
-        return
+b = p1(2)-a*p1(1);
+for k = 1:numel(obstacles)
+    obstacle = obstacles{k};
+    aObs = (obstacle(end,2)-obstacle(1,2))/(obstacle(end,1)-obstacle(1,1));
+    if aObs == 0
+        bObs = obstacle(1,2)-aObs*obstacle(1,1);
+        xIntersection = (bObs-b)/(a-aObs);
+        if xIntersection >= obstacle(1,1) && xIntersection <= obstacle(end,1)...
+            && xIntersection >= p1(1) && xIntersection <= p2(1)
+            isFree = false;
+            return
+        end
+    elseif isinf(aObs)
+        yIntersection = a*obstacle(1,1)+b;
+        if yIntersection >= obstacle(1,2) && yIntersection <= obstacle(end,2)...
+                && yIntersection >= min(p1(2), p2(2)) && yIntersection <= max(p1(2), p2(2))
+            isFree = false;
+            return
+        end
     end
 end
-if a == 0
-    if p1(2) < doors(3,2) || (p1(2) > doors(3,2)+doorSize && p1(2) < doors(4,2))...
-            || p1(2) > doors(4,2)+1
-        isFree = false;
-        return
-    end  
-end
-b = p1(2)-a*p1(1);
-xHrs = (halfRoomSize-b)/a;
-if xHrs >= p1(1) && xHrs <= p2(1)
-    if xHrs < doors(1,1) || (xHrs > doors(1,1)+doorSize && xHrs < doors(2,1))...
-            || xHrs > doors(2,1)+doorSize
-        isFree = false;
-        return
-    end   
-end
-yHrs = a*halfRoomSize+b;
-if yHrs >= min(p1(2), p2(2)) && yHrs <= max(p1(2), p2(2))
-    if yHrs < doors(3,2) || (yHrs > doors(3,2)+doorSize && yHrs < doors(4,2))...
-            || yHrs > doors(4,2)+doorSize
-        isFree = false;
-        return
-    end   
-end
-
