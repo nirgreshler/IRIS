@@ -6,11 +6,19 @@ envGrid = 0.01;
 pointsGrid = 0.1;
 doorSize = 0.5;
 nPoints = 200;
-connectionRadius = 3;
+connectionRadius = 2;
+samplingMethod = 'Uniform'; % 'Uniform' / 'Sobol'
 inspectionPoints = GetInspectionPoints(roomSize, pointsGrid);
 [obstacles, doors] = GetObstacles(roomSize, doorSize, envGrid);
-
-points = envGrid*round(rand(nPoints,2)*roomSize/envGrid);
+skip = randi(100000);
+switch samplingMethod
+    case 'Uniform'
+        points = envGrid*round(rand(nPoints,2)*roomSize/envGrid);
+    case 'Sobol'
+        sampler = sobolset(2);
+        sampler.Skip = skip;
+        points = sampler.net(nPoints)*roomSize;
+end
 % Remove invalid points
 points = unique(points, 'rows');
 validIdcs = points(:,1) ~= roomSize/2 & points(:,1) ~= 0 & points(:,1) ~= roomSize &...
@@ -47,7 +55,9 @@ clustersSpctral = kmeans(kSmallestEigenvectors, nClusters);
 pointsInSight = zeros(nPoints, size(inspectionPoints,1));
 for k = 1:nPoints
     for p = 1:size(inspectionPoints,1)
-        
+        if CollisionDetector(points(k,:), inspectionPoints(p,:), doors, envGrid, doorSize)
+            pointsInSight(k,p) = 1;
+        end
     end
 end
 %% Plot enviroment
@@ -62,6 +72,18 @@ fclose(fId);
 
 fId = fopen('syn_vertex', 'w');
 for k = 1:nPoints
-    fprintf(fId, '%d 0 0 ', k-1, points(k,1), points(k,2));
+    fprintf(fId, '%d 0 0 ', k-1);
+    fprintf(fId, strrep(strrep(num2str(find(pointsInSight(k,:))), '   ', ' '), '  ', ' '));
+    fprintf(fId, '\n');
+end
+fclose(fId);
+
+fId = fopen('syn_edge', 'w');
+for k = 1:nPoints
+    for p = k+1:nPoints
+        if M(k,p) == 1
+            fprintf(fId, '%d %d 1 1 0 0 %f\n', k-1, p-1, norm(points(k,:)-points(p,:)));
+        end
+    end
 end
 fclose(fId);

@@ -22,10 +22,7 @@ if a == 0
     end  
 end
 b = p1(2)-a*p1(1);
-xVec = p1(1):envGrid:p2(1);
-yVec = a*xVec+b;
 xHrs = (halfRoomSize-b)/a;
-[m,i] = min(abs(yVec-halfRoomSize));
 if xHrs >= p1(1) && xHrs <= p2(1)
     if xHrs < doors(1,1) || (xHrs > doors(1,1)+doorSize && xHrs < doors(2,1))...
             || xHrs > doors(2,1)+doorSize

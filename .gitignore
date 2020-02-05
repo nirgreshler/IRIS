@@ -30,3 +30,4 @@ build*/
 # NIR
 debug/
 .vscode/
+*.asv
