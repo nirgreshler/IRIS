@@ -228,7 +228,8 @@ void Inspection::Graph::Save(const String file_name, const bool save_configs, co
 	for (auto && v : vertices_) {
 		const auto s = v->state->as<DroneStateSpace::StateType>();
 
-		fout << s->Position().transpose() << " "
+		fout << v->index << " "
+		<< s->Position().transpose() << " "
 		<< s->Yaw() << " "
 		<< s->CameraAngle() << std::endl;
 	}
