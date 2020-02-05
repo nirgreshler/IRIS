@@ -1,8 +1,8 @@
 clear
 close all
 clc
-homeSize = 16;
 nSqrRooms = 4;
+homeSize = nSqrRooms^2;
 nRooms = nSqrRooms^2;
 envGrid = 0.01;
 pointsGrid = 0.1;
@@ -10,7 +10,9 @@ doorSize = 0.5;
 nPoints = 300;
 connectionRadius = 3;
 samplingMethod = 'Uniform'; % 'Uniform' / 'Sobol'
-outputFolder = fullfile('..', 'Graphs', filesep);
+fol = fileparts(mfilename('fullpath'));
+
+outputFolder = fullfile(fol, '..', 'Graphs', filesep);
 %% Create points
 inspectionPoints = GetInspectionPoints(homeSize, pointsGrid);
 [obstacles, doors] = GetObstacles(homeSize, nRooms, doorSize, envGrid);
