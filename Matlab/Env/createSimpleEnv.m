@@ -1,8 +1,8 @@
 clear
 close all
 clc
-homeSize = 12;
-nSqrRooms = 3;
+homeSize = 16;
+nSqrRooms = 4;
 nRooms = nSqrRooms^2;
 envGrid = 0.01;
 pointsGrid = 0.1;
@@ -10,6 +10,7 @@ doorSize = 0.5;
 nPoints = 300;
 connectionRadius = 3;
 samplingMethod = 'Uniform'; % 'Uniform' / 'Sobol'
+outputFolder = fullfile('..', 'Graphs', filesep);
 %% Create points
 inspectionPoints = GetInspectionPoints(homeSize, pointsGrid);
 [obstacles, doors] = GetObstacles(homeSize, nRooms, doorSize, envGrid);
@@ -72,13 +73,13 @@ PlotEnvironment(points, clusters, M, inspectionPoints, obstacles, homeSize, 'Clu
 PlotEnvironment(points, clustersSpectral, M, inspectionPoints, obstacles, homeSize, 'Clustered with Spectral Clustering');
 %% Write text files
 filename = ['syn_' num2str(nRooms) 'rooms'];
-fId = fopen([filename '_conf'], 'w');
+fId = fopen([outputFolder filename '_conf'], 'w');
 for k = 1:nPoints
     fprintf(fId, '%d %f %f\n', k-1, points(k,1), points(k,2));
 end
 fclose(fId);
 
-fId = fopen([filename '_vertex'], 'w');
+fId = fopen([outputFolder filename '_vertex'], 'w');
 for k = 1:nPoints
     fprintf(fId, '%d 0 0 ', k-1);
     fprintf(fId, strrep(strrep(num2str(find(pointsInSight(k,:))), '   ', ' '), '  ', ' '));
@@ -86,7 +87,7 @@ for k = 1:nPoints
 end
 fclose(fId);
 
-fId = fopen([filename '_edge'], 'w');
+fId = fopen([outputFolder filename '_edge'], 'w');
 for k = 1:nPoints
     for p = k+1:nPoints
         if M(k,p) == 1
