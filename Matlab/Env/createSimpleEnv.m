@@ -1,13 +1,13 @@
 clear
 close all
 clc
-homeSize = 16;
-nSqrRooms = 4;
+nSqrRooms = 3;
+homeSize = nSqrRooms^2;
 nRooms = nSqrRooms^2;
 envGrid = 0.01;
 pointsGrid = 0.1;
 doorSize = 0.5;
-nPoints = 300;
+nPoints = 30*nRooms;
 connectionRadius = 3;
 samplingMethod = 'Uniform'; % 'Uniform' / 'Sobol'
 outputFolder = fullfile('..', 'Graphs', filesep);
@@ -46,6 +46,8 @@ for k = 1:nPoints
         end
     end
 end
+edges = M2Edges(M);
+Mtag = Edges2M(edges);
 %% Get inspection point for each point
 pointsInSight = zeros(nPoints, size(inspectionPoints,1));
 for k = 1:nPoints
@@ -56,18 +58,7 @@ for k = 1:nPoints
     end
 end
 %% Clustering
-% kmean
-D = diag(sum(M));
-L = D-M;
-[V,D] = eig(L);
-eigenValues = diag(D);
-dEigens = diff(eigenValues);
-[~, maxIdx] = max(dEigens(1:nRooms*2));
-nClusters = maxIdx;
-clusters = kmeans(points, nClusters);
-kSmallestEigenvalues = eigenValues(1:nClusters+1);
-kSmallestEigenvectors = V(:,1:nClusters+1);
-clustersSpectral = kmeans(kSmallestEigenvectors, nClusters);
+[clusters, clustersSpectral] = ClusterPoints(points, M);
 %% Plot enviroment
 PlotEnvironment(points, clusters, M, inspectionPoints, obstacles, homeSize, 'Clustered with K-Means');
 PlotEnvironment(points, clustersSpectral, M, inspectionPoints, obstacles, homeSize, 'Clustered with Spectral Clustering');
