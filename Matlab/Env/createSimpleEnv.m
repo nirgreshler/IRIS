@@ -10,7 +10,9 @@ doorSize = 0.5;
 nPoints = 30*nRooms;
 connectionRadius = 3;
 samplingMethod = 'Uniform'; % 'Uniform' / 'Sobol'
-outputFolder = fullfile('..', 'Graphs', filesep);
+fol = fileparts(mfilename('fullpath'));
+
+outputFolder = fullfile(fol, '..', 'Graphs', filesep);
 %% Create points
 inspectionPoints = GetInspectionPoints(homeSize, pointsGrid);
 [obstacles, doors] = GetObstacles(homeSize, nRooms, doorSize, envGrid);
