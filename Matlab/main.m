@@ -1,8 +1,10 @@
 K_MEANS_START = 1;
 K_MEANS_END = 20;
+k_vec = K_MEANS_START:K_MEANS_END;
+k_vec = 3:10;
 CVG_TH = 0.2;
 dist = 'sqeuclidean';
-base_name = 'C:\Users\nirgreshler\GitRepos\IRIS\Matlab\Graphs\syn';
+base_name = 'C:\Users\nirgreshler\GitRepos\IRIS\Matlab\Graphs\syn_4rooms';
 
 [conf, vertex, edges] = read_graph(base_name);
 
@@ -30,18 +32,18 @@ close(gcf);
 rng(1);
 c = c(randperm(size(c, 1)), :);
 
-k_vec = K_MEANS_START:K_MEANS_END;
-
 diff_vec = zeros(1, length(k_vec));
 for k_idx = 1:length(k_vec)
-    [idx,C] = kmeans(conf_data, k_idx, 'Display', 'off', 'Distance', dist);
-%     figure; 
-%     scatter(conf_data(:, 1), conf_data(:, 2), 5, c(idx, :))
+    k = k_vec(k_idx);
+    [idx,C] = kmeans(conf_data, k, 'Display', 'off', 'Distance', dist);
+    figure; 
+    scatter(conf_data(:, 1), conf_data(:, 2), 5, c(idx, :));
+    title(['K=' num2str(k)]);
     
     % Check which coverage we have in each cluster
-    cov_set_per_cluster = cell(k_idx, 1);
-%     figure; 
-    for i = 1:k_idx
+    cov_set_per_cluster = cell(k, 1);
+    figure; 
+    for i = 1:k
         cl_vertex_idx = idx == i;
         cl_vertex_cov = vertex(cl_vertex_idx, 4:end);
         cl_vertex_cov_col = cl_vertex_cov(:);
@@ -57,15 +59,16 @@ for k_idx = 1:length(k_vec)
         
         cov_set_per_cluster{i, 1} = upts(distb > CVG_TH);
         
-%         plot(upts, N, 'DisplayName', ['Cluster ' num2str(i)], 'Color', c(i, :), 'LineStyle', 'None', 'Marker', 'o'); 
-%         hold on;
+        plot(upts, N, 'DisplayName', ['Cluster ' num2str(i)], 'Color', c(i, :), 'LineStyle', 'None', 'Marker', 'o'); 
+        hold on;
         
     end
+    title(['K=' num2str(k)]);
 %     legend('show');
-    sim_mat = ones(k_idx, k_idx)*nan;
+    sim_mat = ones(k, k)*nan;
     
-    for i = 1:k_idx
-        for j = i+1:k_idx
+    for i = 1:k
+        for j = i+1:k
             ints = intersect(cov_set_per_cluster{i}, cov_set_per_cluster{j});
             unio = union(cov_set_per_cluster{i}, cov_set_per_cluster{j});
             jaccard_dist = length(ints) / length(unio);
