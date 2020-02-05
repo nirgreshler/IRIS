@@ -1,13 +1,13 @@
 clear
 close all
 clc
-nSqrRooms = 3;
-homeSize = nSqrRooms^2;
+nSqrRooms = 4;
+homeSize = 16;%nSqrRooms^2;
 nRooms = nSqrRooms^2;
 envGrid = 0.01;
 pointsGrid = 0.1;
-doorSize = 0.5;
-nPoints = 30*nRooms;
+doorSize = 0.2;
+nPoints = 500;
 connectionRadius = 3;
 samplingMethod = 'Uniform'; % 'Uniform' / 'Sobol'
 fol = fileparts(mfilename('fullpath'));
@@ -60,7 +60,7 @@ for k = 1:nPoints
     end
 end
 %% Clustering
-[clusters, clustersSpectral] = ClusterPoints(points, M);
+[clusters, clustersSpectral] = ClusterPoints(points, M, nRooms);
 %% Plot enviroment
 PlotEnvironment(points, clusters, M, inspectionPoints, obstacles, homeSize, 'Clustered with K-Means');
 PlotEnvironment(points, clustersSpectral, M, inspectionPoints, obstacles, homeSize, 'Clustered with Spectral Clustering');

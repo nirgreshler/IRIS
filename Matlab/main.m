@@ -1,7 +1,9 @@
 K_MEANS_START = 1;
 K_MEANS_END = 20;
 k_vec = K_MEANS_START:K_MEANS_END;
-CVG_TH = 0.2;
+CVG_TH = 0.5;
+
+SPECTRAL = true;
 
 % rng(K_MEANS_START);
 
@@ -43,7 +45,16 @@ c = c(randperm(size(c, 1)), :);
 diff_vec = zeros(1, length(k_vec));
 for k_idx = 1:length(k_vec)
     k = k_vec(k_idx);
-    [idx,C] = kmeans(conf_data, k, 'Display', 'off', 'Distance', dist);
+    
+    [clustersKmeans, clustersSpectral] = ClusterPoints(conf_data, Edges2M(edges), k);
+    
+    if SPECTRAL
+        idx = clustersSpectral;
+    else
+        idx = clustersKmeans;
+%         idx = kmeans(conf_data, k, 'Distance', dist);
+    end
+
     if PLOT_CLUSTERING
         figure;
         scatter(conf_data(:, 1), conf_data(:, 2), 5, c(idx, :));
