@@ -6,6 +6,9 @@ if p1(1) > p2(1)
 end
 isFree = true;
 a = (p2(2)-p1(2))/(p2(1)-p1(1));
+if isinf(a)
+    error('Handle This!')
+end
 b = p1(2)-a*p1(1);
 for k = 1:numel(obstacles)
     obstacle = obstacles{k};
