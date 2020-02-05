@@ -17,8 +17,9 @@ plot([0 0], [0 roomSize], '-k', 'LineWidth', 1)
 plot(inspectionPoints(:,1), inspectionPoints(:,2), 'ob')
 
 % obstacles
-plot(obstacles{1}(:,1), obstacles{1}(:,2), '.k', 'LineWidth', 1)
-plot(obstacles{2}(:,1), obstacles{2}(:,2), '.k', 'LineWidth', 1)
+for k = 1:numel(obstacles)
+    plot(obstacles{k}(:,1), obstacles{k}(:,2), '.k', 'LineWidth', 1)
+end
 
 % edges
 for k = 1:nPoints
@@ -33,8 +34,10 @@ end
 
 % points
 colorOrder = get(gca, 'ColorOrder');
+nColors = size(colorOrder,1);
 for k = 1:nClusters
-    plot(points(clusters == k,1), points(clusters == k,2), '.', 'Color', colorOrder(k,:), 'MarkerSize', 15, 'LineWidth', 3)
+    color = colorOrder(mod(k-1,nColors)+1,:);
+    plot(points(clusters == k,1), points(clusters == k,2), '.', 'Color', color, 'MarkerSize', 15, 'LineWidth', 3)
 end
 
 title(plotTitle)

@@ -1,40 +1,56 @@
 clear
 close all
 clc
-roomSize = 10;
+homeSize = 12;
+nSqrRooms = 3;
+nRooms = nSqrRooms^2;
 envGrid = 0.01;
 pointsGrid = 0.1;
 doorSize = 0.5;
-nPoints = 200;
-connectionRadius = 2;
+nPoints = 300;
+connectionRadius = 3;
 samplingMethod = 'Uniform'; % 'Uniform' / 'Sobol'
-inspectionPoints = GetInspectionPoints(roomSize, pointsGrid);
-[obstacles, doors] = GetObstacles(roomSize, doorSize, envGrid);
+%% Create points
+inspectionPoints = GetInspectionPoints(homeSize, pointsGrid);
+[obstacles, doors] = GetObstacles(homeSize, nRooms, doorSize, envGrid);
 skip = randi(100000);
 switch samplingMethod
     case 'Uniform'
-        points = envGrid*round(rand(nPoints,2)*roomSize/envGrid);
+        points = envGrid*round(rand(nPoints,2)*homeSize/envGrid);
     case 'Sobol'
         sampler = sobolset(2);
         sampler.Skip = skip;
-        points = sampler.net(nPoints)*roomSize;
+        points = sampler.net(nPoints)*homeSize;
 end
-% Remove invalid points
+%% Remove invalid points
 points = unique(points, 'rows');
-validIdcs = points(:,1) ~= roomSize/2 & points(:,1) ~= 0 & points(:,1) ~= roomSize &...
-    points(:,2) ~= roomSize/2 & points(:,2) ~= 0 & points(:,2) ~= roomSize;
+validIdcs =  points(:,1) ~= 0 & points(:,1) ~= homeSize &...
+    points(:,2) ~= 0 & points(:,2) ~= homeSize;
+for k = 1:nPoints
+    if any(all(transpose(points(k,:) == cell2mat(obstacles'))))
+        validIdcs(k) = false;
+    end
+end
 points = points(validIdcs,:);
 nPoints = size(points,1);
-
-% Build adjacency matrix
+%% Build adjacency matrix
 M = zeros(nPoints); 
 for k = 1:nPoints
     p1 = points(k,:);
     for m = k+1:nPoints
         p2 = points(m,:);
-        if norm(p1-p2) <= connectionRadius && CollisionDetector(p1, p2, doors, envGrid, doorSize)
+        if norm(p1-p2) <= connectionRadius && CollisionDetector(p1, p2, obstacles)
             M(k,m) = 1;
             M(m,k) = 1;
+        end
+    end
+end
+%% Get inspection point for each point
+pointsInSight = zeros(nPoints, size(inspectionPoints,1));
+for k = 1:nPoints
+    for p = 1:size(inspectionPoints,1)
+        if CollisionDetector(points(k,:), inspectionPoints(p,:), obstacles)
+            pointsInSight(k,p) = 1;
         end
     end
 end
@@ -44,33 +60,25 @@ D = diag(sum(M));
 L = D-M;
 [V,D] = eig(L);
 eigenValues = diag(D);
-[~, maxIdx] = max(diff(eigenValues));
+dEigens = diff(eigenValues);
+[~, maxIdx] = max(dEigens(1:nRooms*2));
 nClusters = maxIdx;
 clusters = kmeans(points, nClusters);
 kSmallestEigenvalues = eigenValues(1:nClusters+1);
 kSmallestEigenvectors = V(:,1:nClusters+1);
-clustersSpctral = kmeans(kSmallestEigenvectors, nClusters);
-
-%% G inspection point for each point
-pointsInSight = zeros(nPoints, size(inspectionPoints,1));
-for k = 1:nPoints
-    for p = 1:size(inspectionPoints,1)
-        if CollisionDetector(points(k,:), inspectionPoints(p,:), doors, envGrid, doorSize)
-            pointsInSight(k,p) = 1;
-        end
-    end
-end
+clustersSpectral = kmeans(kSmallestEigenvectors, nClusters);
 %% Plot enviroment
-PlotEnvironment(points, clusters, M, inspectionPoints, obstacles, roomSize, 'Clustered with K-Means');
-PlotEnvironment(points, clustersSpctral, M, inspectionPoints, obstacles, roomSize, 'Clustered with Spectral Clustering');
+PlotEnvironment(points, clusters, M, inspectionPoints, obstacles, homeSize, 'Clustered with K-Means');
+PlotEnvironment(points, clustersSpectral, M, inspectionPoints, obstacles, homeSize, 'Clustered with Spectral Clustering');
 %% Write text files
-fId = fopen('syn_conf', 'w');
+filename = ['syn_' num2str(nRooms) 'rooms'];
+fId = fopen([filename '_conf'], 'w');
 for k = 1:nPoints
     fprintf(fId, '%d %f %f\n', k-1, points(k,1), points(k,2));
 end
 fclose(fId);
 
-fId = fopen('syn_vertex', 'w');
+fId = fopen([filename '_vertex'], 'w');
 for k = 1:nPoints
     fprintf(fId, '%d 0 0 ', k-1);
     fprintf(fId, strrep(strrep(num2str(find(pointsInSight(k,:))), '   ', ' '), '  ', ' '));
@@ -78,7 +86,7 @@ for k = 1:nPoints
 end
 fclose(fId);
 
-fId = fopen('syn_edge', 'w');
+fId = fopen([filename '_edge'], 'w');
 for k = 1:nPoints
     for p = k+1:nPoints
         if M(k,p) == 1
