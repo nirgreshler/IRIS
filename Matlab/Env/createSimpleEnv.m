@@ -1,17 +1,17 @@
 clear
 close all
 clc
-nSqrRooms = 3;
-homeSize = 12;%nSqrRooms^2;
+nSqrRooms = 2;
+homeSize = 10;%nSqrRooms^2;
 nRooms = nSqrRooms^2;
 roomSize = homeSize/nSqrRooms;
 envGrid = 0.01;
 pointsGrid = 0.1;
-doorSize = 0.3;
-nPoints = 300;
-connectionRadius = 3;
+doorSize = 0.5;
+nPoints = 600;
+connectionRadius = 1;
 sightRadius = roomSize*sqrt(2);
-samplingMethod = 'Sobol'; % 'Uniform' / 'Sobol'
+samplingMethod = 'RRT'; % 'Uniform' / 'Sobol' / 'RRT'
 fol = fileparts(mfilename('fullpath'));
 
 outputFolder = fullfile(fol, '..', 'Graphs', filesep);
@@ -26,9 +26,24 @@ switch samplingMethod
         sampler = sobolset(2);
         sampler.Skip = skip;
         points = sampler.net(nPoints)*homeSize;
+    case 'RRT'
+        eta = 0.5;
+        startPoint = [1e-3 1e-3]; %envGrid*round(rand(1,2)*homeSize/envGrid);
+        points = startPoint;
+        for k = 1:nPoints
+            randPoint = envGrid*round(rand(1,2)*homeSize/envGrid);
+            [m,i] = min(sqrt(sum((points-randPoint).^2,2)));
+            direction = randPoint-points(i,:);
+            direction = direction./norm(direction);
+            newPoint = points(i,:)+direction*min(eta, norm(points(i,:)-randPoint));
+            if CollisionDetector(points(i,:), newPoint, obstacles, connectionRadius)
+                points = [points; newPoint];
+            end
+        end
+        nPoints = size(points,1);
 end
 %% Remove invalid points
-points = unique(points, 'rows');
+points = unique(points, 'rows', 'stable');
 validIdcs =  points(:,1) ~= 0 & points(:,1) ~= homeSize &...
     points(:,2) ~= 0 & points(:,2) ~= homeSize;
 for k = 1:nPoints

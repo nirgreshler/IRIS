@@ -1,4 +1,4 @@
 homeSize: 10
-doorSize: 0.300000
-connectionRadius: 2.000000
+doorSize: 0.500000
+connectionRadius: 1.000000
 sightRadius: 7.071068
