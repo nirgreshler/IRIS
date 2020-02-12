@@ -1,21 +1,34 @@
-K_MEANS_START = 1;
-K_MEANS_END = 20;
+close all
+clc
+clear
+
+K_MEANS_START = 2;
+K_MEANS_END = 10;
 k_vec = K_MEANS_START:K_MEANS_END;
-CVG_TH = 0.5;
+CVG_TH = 0.8;
+addpath(genpath(pwd))
 
 SPECTRAL = true;
 
 % rng(K_MEANS_START);
 
 % PLOTTING
-PLOT_CLUSTERING = false;
+PLOT_ENVIRONMENMT = false;
+PLOT_CLUSTERING = true;
 PLOT_HISTOGRAMS = false;
 
 dist = 'sqeuclidean';
-base_name = 'C:\Users\nirgreshler\GitRepos\IRIS\Matlab\Graphs';
-env_name = 'syn_16rooms';
+base_name = fullfile(pwd, 'Graphs');
+% env_name = 'planar_1000';
+env_name = 'syn_4rooms';
 
 [conf, vertex, edges] = read_graph(fullfile(base_name, env_name));
+[obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
+M = Edges2M(edges(:,[1 2 7]));
+if PLOT_ENVIRONMENMT && ~isempty(obstacles)
+    [clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), Edges2M(edges));
+    PlotEnvironment(conf(:,2:3), clustersKmeans, M, inspectionPoints, obstacles, params.homeSize);
+end
 
 % Show the graph
 % s = edges(:, 1) + 1;
@@ -56,9 +69,7 @@ for k_idx = 1:length(k_vec)
     end
 
     if PLOT_CLUSTERING
-        figure;
-        scatter(conf_data(:, 1), conf_data(:, 2), 5, c(idx, :));
-        title(['K=' num2str(k)]);
+       PlotEnvironment(conf_data, idx, M, inspectionPoints, obstacles, params.homeSize, ['k=', num2str(k)]);
     end
     
     % Check which coverage we have in each cluster
@@ -68,6 +79,7 @@ for k_idx = 1:length(k_vec)
     end
     for i = 1:k
         cl_vertex_idx = idx == i;
+        cl_vertex = vertex(cl_vertex_idx, :);
         cl_vertex_cov = vertex(cl_vertex_idx, 4:end);
         cl_vertex_cov_col = cl_vertex_cov(:);
         cl_vertex_cov_col = cl_vertex_cov_col(~isnan(cl_vertex_cov_col));
@@ -81,11 +93,13 @@ for k_idx = 1:length(k_vec)
         distb = N ./ maxN;
         
         cov_set_per_cluster{i, 1} = upts(distb > CVG_TH);
+        if PLOT_CLUSTERING
+            plot(inspectionPoints(cov_set_per_cluster{i},1), inspectionPoints(cov_set_per_cluster{i},2), 'sq')
+        end
         if PLOT_HISTOGRAMS
             plot(upts, N, 'DisplayName', ['Cluster ' num2str(i)], 'Color', c(i, :), 'LineStyle', 'None', 'Marker', 'o');
             hold on;
         end
-        
     end
     if PLOT_HISTOGRAMS
         title(['K=' num2str(k)]);
@@ -98,7 +112,7 @@ for k_idx = 1:length(k_vec)
             ints = intersect(cov_set_per_cluster{i}, cov_set_per_cluster{j});
             unio = union(cov_set_per_cluster{i}, cov_set_per_cluster{j});
             jaccard_dist = length(ints) / length(unio);
-            sim_mat(i, j) = jaccard_dist;
+            sim_mat(i, j) = length(ints) / min(numel(cov_set_per_cluster{i}), numel(cov_set_per_cluster{j}));
         end
     end
     
@@ -109,4 +123,4 @@ for k_idx = 1:length(k_vec)
 end
 
 figure;
-plot(k_vec, diff_vec);
+plot(k_vec, diff_vec, '.-');

@@ -1,4 +1,8 @@
-function isFree = CollisionDetector(p1, p2, obstacles)
+function isFree = CollisionDetector(p1, p2, obstacles, radius)
+if norm(p1-p2) >=  radius
+    isFree = false;
+    return
+end
 if p1(1) > p2(1)
    tmp = p2;
    p2 = p1;
@@ -7,7 +11,7 @@ end
 isFree = true;
 a = (p2(2)-p1(2))/(p2(1)-p1(1));
 if isinf(a)
-    error('Handle This!')
+    warning('Handle This!')
 end
 b = p1(2)-a*p1(1);
 for k = 1:numel(obstacles)
