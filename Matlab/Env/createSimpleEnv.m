@@ -8,7 +8,7 @@ roomSize = homeSize/nSqrRooms;
 envGrid = 0.01;
 pointsGrid = 0.1;
 doorSize = 0.5;
-nPoints = 3000;
+nPoints = 10000;
 connectionRadius = 1;
 sightRadius = roomSize*sqrt(2);
 samplingMethod = 'RRT'; % 'Uniform' / 'Sobol' / 'RRT'
@@ -64,6 +64,7 @@ for k = 1:nPoints
             M(m,k) = 1;
         end
     end
+    disp([num2str(k) '/' num2str(nPoints)]);
 end
 edges = M2Edges(M);
 Mtag = Edges2M(edges);
