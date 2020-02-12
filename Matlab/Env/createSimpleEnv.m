@@ -1,14 +1,14 @@
 clear
 close all
 clc
-nSqrRooms = 2;
+nSqrRooms = 3;
 homeSize = 10;%nSqrRooms^2;
 nRooms = nSqrRooms^2;
 roomSize = homeSize/nSqrRooms;
 envGrid = 0.01;
 pointsGrid = 0.1;
 doorSize = 0.5;
-nPoints = 600;
+nPoints = 3000;
 connectionRadius = 1;
 sightRadius = roomSize*sqrt(2);
 samplingMethod = 'RRT'; % 'Uniform' / 'Sobol' / 'RRT'

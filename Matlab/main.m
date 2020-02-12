@@ -17,10 +17,19 @@ PLOT_ENVIRONMENMT = false;
 PLOT_CLUSTERING = true;
 PLOT_HISTOGRAMS = false;
 
+% SOLVING
+RUN_SEARCH = true;
+initial_p = 0.99;
+initial_eps = 0.8;
+tightening_rate = 0;
+method = 0;
+
 dist = 'sqeuclidean';
 base_name = fullfile(pwd, 'Graphs');
+wsl_path = '/home/nirgreshler/Project/IRIS';
+search_path = [wsl_path, '/debug/app/search_graph'];
 % env_name = 'planar_1000';
-env_name = 'syn_4rooms';
+env_name = 'syn_9rooms';
 
 [conf, vertex, edges] = read_graph(fullfile(base_name, env_name));
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
@@ -30,6 +39,44 @@ if PLOT_ENVIRONMENMT && ~isempty(obstacles)
     PlotEnvironment(conf(:,2:3), clustersKmeans, M, inspectionPoints, obstacles, params.homeSize);
 end
 
+if RUN_SEARCH
+    % Run in WSL
+    file_to_read = [wsl_path '/Matlab/Graphs/' env_name];
+    file_to_write = [wsl_path '/Matlab/Graphs/' env_name];
+    status = system([
+        'wsl ' ...
+        search_path ' ' ...
+        file_to_read ' ' ...
+        num2str(initial_p) ' ' ...
+        num2str(initial_eps) ' ' ...
+        num2str(tightening_rate) ' ' ...
+        num2str(method) ' ' ...
+        file_to_write]);
+    if status
+        error('Failed to run');
+    end
+    
+    % Read result
+    res_file = [wsl_path '/Matlab/Graphs/' env_name '_result'];
+    [status, output] = system(['wsl cat ' res_file]);
+    if status
+        error('Failed to read output');
+    end
+    
+    splt = strsplit(output, '\n');
+    out = splt{end - 1};
+    outsplt = strsplit(strtrim(out), ' ');
+    pathIdx = str2double(outsplt(2:end)) + 1;
+    % cluster
+    [clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), Edges2M(edges));
+    % plot enviroment
+    PlotEnvironment(conf(:,2:3), clustersKmeans, M, inspectionPoints, obstacles, params.homeSize);
+    % plot path
+    for i = 1:length(pathIdx) - 1
+        plot([conf(pathIdx(i), 2), conf(pathIdx(i+1), 2)], [conf(pathIdx(i), 3), conf(pathIdx(i+1), 3)], ...
+            'g', 'Marker', 'o', 'LineWidth', 2)
+    end
+end
 % Show the graph
 % s = edges(:, 1) + 1;
 % t = edges(:, 2) + 1;
