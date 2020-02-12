@@ -8,7 +8,7 @@ roomSize = homeSize/nSqrRooms;
 envGrid = 0.01;
 pointsGrid = 0.1;
 doorSize = 0.5;
-nPoints = 10000;
+nPoints = 5000;
 connectionRadius = 1;
 sightRadius = roomSize*sqrt(2);
 samplingMethod = 'RRT'; % 'Uniform' / 'Sobol' / 'RRT'
@@ -78,10 +78,10 @@ for k = 1:nPoints
     end
 end
 %% Clustering
-[clusters, clustersSpectral] = ClusterPoints(points, M, nRooms);
+% [clusters, clustersSpectral] = ClusterPoints(points, M, nRooms);
 %% Plot enviroment
-PlotEnvironment(points, clusters, M, inspectionPoints, obstacles, homeSize, 'Clustered with K-Means');
-PlotEnvironment(points, clustersSpectral, M, inspectionPoints, obstacles, homeSize, 'Clustered with Spectral Clustering');
+% PlotEnvironment(points, clusters, M, inspectionPoints, obstacles, homeSize, 'Clustered with K-Means');
+% PlotEnvironment(points, clustersSpectral, M, inspectionPoints, obstacles, homeSize, 'Clustered with Spectral Clustering');
 %% Write text files
 filename = ['syn_' num2str(nRooms) 'rooms'];
 fId = fopen([outputFolder filename '_conf'], 'w');

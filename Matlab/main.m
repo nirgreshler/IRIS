@@ -2,6 +2,9 @@ close all
 clc
 clear
 
+% env_name = 'planar_1000';
+env_name = 'syn_9rooms';
+
 K_MEANS_START = 2;
 K_MEANS_END = 10;
 k_vec = K_MEANS_START:K_MEANS_END;
@@ -28,8 +31,7 @@ dist = 'sqeuclidean';
 base_name = fullfile(pwd, 'Graphs');
 wsl_path = '/home/nirgreshler/Project/IRIS';
 search_path = [wsl_path, '/debug/app/search_graph'];
-% env_name = 'planar_1000';
-env_name = 'syn_9rooms';
+base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];
 
 [conf, vertex, edges] = read_graph(fullfile(base_name, env_name));
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
@@ -41,8 +43,8 @@ end
 
 if RUN_SEARCH
     % Run in WSL
-    file_to_read = [wsl_path '/Matlab/Graphs/' env_name];
-    file_to_write = [wsl_path '/Matlab/Graphs/' env_name];
+    file_to_read = [base_name_in_wsl '/' env_name];
+    file_to_write = [base_name_in_wsl '/' env_name];
     status = system([
         'wsl ' ...
         search_path ' ' ...
@@ -57,7 +59,7 @@ if RUN_SEARCH
     end
     
     % Read result
-    res_file = [wsl_path '/Matlab/Graphs/' env_name '_result'];
+    res_file = [base_name_in_wsl '/' env_name '_result'];
     [status, output] = system(['wsl cat ' res_file]);
     if status
         error('Failed to read output');
