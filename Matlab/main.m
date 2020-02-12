@@ -3,7 +3,7 @@ clc
 clear
 
 % env_name = 'planar_1000';
-env_name = 'syn_9rooms';
+env_name = 'syn_4rooms';
 
 K_MEANS_START = 2;
 K_MEANS_END = 10;
@@ -59,16 +59,22 @@ if RUN_SEARCH
     end
     
     % Read result
-    res_file = [base_name_in_wsl '/' env_name '_result'];
-    [status, output] = system(['wsl cat ' res_file]);
-    if status
-        error('Failed to read output');
-    end
-    
-    splt = strsplit(output, '\n');
-    out = splt{end - 1};
+    res_file = [base_name '\' env_name '_result'];
+    fid = fopen(res_file);
+    C = textscan(fid, '%s', 'delimiter','\n');
+    fclose(fid);
+    C = C{1, 1};
+%     [status, output] = system(['wsl cat ' res_file]);
+%     if status
+%         error('Failed to read output');
+%     end
+
+    out = C{end};   
+%     splt = strsplit(output, '\n');
+%     out = splt{end - 1};
     outsplt = strsplit(strtrim(out), ' ');
     pathIdx = str2double(outsplt(2:end)) + 1;
+
     % cluster
     [clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), Edges2M(edges));
     % plot enviroment
