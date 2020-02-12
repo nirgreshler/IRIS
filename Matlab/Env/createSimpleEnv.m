@@ -92,7 +92,7 @@ fclose(fId);
 fId = fopen([outputFolder filename '_vertex'], 'w');
 for k = 1:nPoints
     fprintf(fId, '%d 0 0 ', k-1);
-    fprintf(fId, strrep(strrep(num2str(find(pointsInSight(k,:))), '   ', ' '), '  ', ' '));
+    fprintf(fId, strrep(strrep(num2str(find(pointsInSight(k,:))-1), '   ', ' '), '  ', ' '));
     fprintf(fId, '\n');
 end
 fclose(fId);
