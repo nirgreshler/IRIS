@@ -8,7 +8,7 @@ roomSize = homeSize/nSqrRooms;
 envGrid = 0.01;
 pointsGrid = 0.1;
 doorSize = 0.5;
-nPoints = 5000;
+nPoints = 2000;
 connectionRadius = 1;
 sightRadius = roomSize*sqrt(2);
 samplingMethod = 'RRT'; % 'Uniform' / 'Sobol' / 'RRT'
@@ -31,8 +31,11 @@ switch samplingMethod
         startPoint = [1e-3 1e-3]; %envGrid*round(rand(1,2)*homeSize/envGrid);
         points = startPoint;
         for k = 1:nPoints
-            randPoint = envGrid*round(rand(1,2)*homeSize/envGrid);
-            [m,i] = min(sqrt(sum((points-randPoint).^2,2)));
+            m = 0;
+            while m == 0
+                randPoint = envGrid*round(rand(1,2)*homeSize/envGrid);
+                [m,i] = min(sqrt(sum((points-randPoint).^2,2)));
+            end
             direction = randPoint-points(i,:);
             direction = direction./norm(direction);
             newPoint = points(i,:)+direction*min(eta, norm(points(i,:)-randPoint));
@@ -70,17 +73,20 @@ edges = M2Edges(M);
 Mtag = Edges2M(edges);
 %% Get inspection point for each point
 pointsInSight = zeros(nPoints, size(inspectionPoints,1));
+timeVisVec = zeros(nPoints,1);
 for k = 1:nPoints
+    tic
     for p = 1:size(inspectionPoints,1)
         if CollisionDetector(points(k,:), inspectionPoints(p,:), obstacles, sightRadius)
             pointsInSight(k,p) = 1;
         end
     end
+    timeVisVec(k) = toc;
 end
 %% Clustering
-% [clusters, clustersSpectral] = ClusterPoints(points, M, nRooms);
+[clusters, clustersSpectral] = ClusterPoints(points, M, nRooms);
 %% Plot enviroment
-% PlotEnvironment(points, clusters, M, inspectionPoints, obstacles, homeSize, 'Clustered with K-Means');
+PlotEnvironment(points, clusters, M, inspectionPoints, obstacles, homeSize, 'Clustered with K-Means');
 % PlotEnvironment(points, clustersSpectral, M, inspectionPoints, obstacles, homeSize, 'Clustered with Spectral Clustering');
 %% Write text files
 filename = ['syn_' num2str(nRooms) 'rooms'];
@@ -92,7 +98,7 @@ fclose(fId);
 
 fId = fopen([outputFolder filename '_vertex'], 'w');
 for k = 1:nPoints
-    fprintf(fId, '%d 0 0 ', k-1);
+    fprintf(fId, '%d %f 0 ', k-1, timeVisVec(k)*1e3);
     fprintf(fId, strrep(strrep(num2str(find(pointsInSight(k,:))-1), '   ', ' '), '  ', ' '));
     fprintf(fId, '\n');
 end
