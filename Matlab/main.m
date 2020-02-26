@@ -29,7 +29,8 @@ method = 0;
 
 dist = 'sqeuclidean';
 base_name = fullfile(pwd, 'Graphs');
-wsl_path = '/home/nirgreshler/Project/IRIS';
+% wsl_path = '/home/nirgreshler/Project/IRIS';
+wsl_path = '/home/galgreshler/Project/IRIS';
 search_path = [wsl_path, '/debug/app/search_graph'];
 base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];
 
