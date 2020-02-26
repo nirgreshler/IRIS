@@ -7,10 +7,10 @@ nRooms = nSqrRooms^2;
 roomSize = homeSize/nSqrRooms;
 envGrid = 0.01;
 pointsGrid = 0.1;
-doorSize = 0.5;
+doorSize = 0.3;
 nPoints = 2000;
 connectionRadius = 1;
-sightRadius = roomSize*sqrt(2);
+sightRadius = roomSize*sqrt(2)/2;
 samplingMethod = 'RRT'; % 'Uniform' / 'Sobol' / 'RRT'
 fol = fileparts(mfilename('fullpath'));
 
