@@ -16,7 +16,7 @@ SPECTRAL = true;
 % rng(K_MEANS_START);
 
 % PLOTTING
-PLOT_ENVIRONMENMT = false;
+PLOT_ENVIRONMENMT = true;
 PLOT_CLUSTERING = false;
 PLOT_HISTOGRAMS = false;
 
@@ -38,8 +38,9 @@ base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
 M = Edges2M(edges(:,[1 2 7]));
 if PLOT_ENVIRONMENMT && ~isempty(obstacles)
-    [clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), Edges2M(edges));
-    PlotEnvironment(conf(:,2:3), clustersKmeans, M, inspectionPoints, obstacles, params.homeSize);
+    [clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), Edges2M(edges), 9);
+    PlotEnvironment(conf(:,2:3), clustersKmeans, M, inspectionPoints, obstacles, params.homeSize , 'K-Means');
+    PlotEnvironment(conf(:,2:3), clustersSpectral, M, inspectionPoints, obstacles, params.homeSize , 'Spectral');
 end
 
 if RUN_SEARCH

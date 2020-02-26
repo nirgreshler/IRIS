@@ -36,7 +36,7 @@ for k = 1:nPoints
 end
 
 % points
-colorOrder = get(gca, 'ColorOrder');
+colorOrder = linspecer(nClusters);
 nColors = size(colorOrder,1);
 for k = 1:nClusters
     color = colorOrder(mod(k-1,nColors)+1,:);
