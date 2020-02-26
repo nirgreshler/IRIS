@@ -3,7 +3,7 @@ clc
 clear
 
 % env_name = 'planar_1000';
-env_name = 'syn_4rooms';
+env_name = 'syn_9rooms';
 
 K_MEANS_START = 2;
 K_MEANS_END = 10;
