@@ -72,9 +72,10 @@ disp(['Added ' num2str(edges_added) ' edges within clusters']);
 % show the bridge graph
 PlotEnvironment(params, conf(:,2:3), clustersSpectral, M, inspectionPoints, obstacles, 'Spectral');
 % scatter(bridge_conf(:, 2), bridge_conf(:, 3), 'x', 'Linewidth', 1);
-for k = 1:size(bridge_edges, 1)
-    p1 = conf(bridge_edges(k, 1)+1, 2:3);
-    p2 = conf(bridge_edges(k, 2)+1, 2:3);
+ubridge_edges = unique(bridge_edges, 'rows');
+for k = 1:size(ubridge_edges, 1)
+    p1 = conf(ubridge_edges(k, 1)+1, 2:3);
+    p2 = conf(ubridge_edges(k, 2)+1, 2:3);
     plot([p1(1) p2(1)], [p1(2) p2(2)], '--k')
 end
 
@@ -91,10 +92,19 @@ for k = 1:nPoints
     end
     timeVisVec(k) = toc;
 end
+% need to fix indices
+nNodes = size(bridge_vertex(:, 1), 1);
 idx_in_edges = bridge_vertex(:, 1);
-M = BuildAdjcancyMatrix(bridge_conf(:, 2:3), obstacles, params.connectionRadius);
+bridge_vertex(:, 1) = 0:nNodes-1;
+bridge_conf(:, 1) = 0:nNodes-1;
+edgesIdx = bridge_edges(:, 1:2);
+for i = 0:nNodes-1
+    edgesIdx(edgesIdx == idx_in_edges(i+1)) = i;
+end
+bridge_edges(:, 1:2) = edgesIdx;
+
 env_name = [env_name '_bridge'];
-write_graph(fullfile(base_name, env_name), bridge_conf, bridge_vertex, bridge_edges);
+write_graph(fullfile(base_name, env_name), bridge_conf, bridge_vertex, unique(bridge_edges, 'rows'));
 % Graph2Text(params, fullfile(base_name, env_name), bridge_conf(:, 2:3), pointsInSight, M);
 
 if PLOT_ENVIRONMENMT && ~isempty(obstacles)
