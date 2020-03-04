@@ -58,6 +58,7 @@ end
 title(plotTitle)
 
 if params.inspectInspection
+    disp('Right click to exit')
     while 1
         [x, y, button] = ginput(1);
         if button == 3
