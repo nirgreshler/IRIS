@@ -65,17 +65,7 @@ nPoints = size(points,1);
 %% Build adjacency matrix
 M = BuildAdjcancyMatrix(points, obstacles, connectionRadius);
 %% Get inspection point for each point
-pointsInSight = zeros(nPoints, size(inspectionPoints,1));
-timeVisVec = zeros(nPoints,1);
-for k = 1:nPoints
-    tic
-    for p = 1:size(inspectionPoints,1)
-        if CollisionDetector(points(k,:), inspectionPoints(p,:), obstacles, sightRadius)
-            pointsInSight(k,p) = 1;
-        end
-    end
-    timeVisVec(k) = toc;
-end
+[pointsInSight, timeVisVec] = GetPointsInSight(params, points, inspectionPoints, obstacles);
 %% Clustering
 [clusters, clustersSpectral] = ClusterPoints(points, M, nRooms);
 %% Plot enviroment

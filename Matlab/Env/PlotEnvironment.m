@@ -4,6 +4,9 @@ homeSize = params.homeSize;
 if ~isfield(params, 'plotEdges')
     params.plotEdges = false;
 end
+if ~isfield(params, 'inspectInspection')
+    params.inspectInspection = false;
+end
 
 if ~exist('plotTitle', 'var') || isempty(plotTitle)
     plotTitle = 'Environment';
@@ -53,3 +56,19 @@ for k = 1:nClusters
 end
 
 title(plotTitle)
+
+if params.inspectInspection
+    while 1
+        [x, y, button] = ginput(1);
+        if button == 3
+            break
+        end
+        if exist('hInspec', 'var')
+            delete(hInspec)
+        end
+        [~,i] = min(sqrt(sum(([x y]-points).^2,2)));
+        pointToCheck = points(i,:);
+        pointsInSight = logical(GetPointsInSight(params, pointToCheck, inspectionPoints, obstacles));
+        hInspec = plot(inspectionPoints(pointsInSight,1), inspectionPoints(pointsInSight,2), 'oy');
+    end
+end
