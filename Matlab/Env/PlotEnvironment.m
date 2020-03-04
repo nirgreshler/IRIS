@@ -1,6 +1,9 @@
-function PlotEnvironment(points, clusters, M, inspectionPoints, obstacles, homeSize, plotTitle)
+function PlotEnvironment(params, points, clusters, M, inspectionPoints, obstacles, plotTitle)
 
-PLOT_EDGES = false;
+homeSize = params.homeSize;
+if ~isfield(params, 'plotEdges')
+    params.plotEdges = false;
+end
 
 if ~exist('plotTitle', 'var') || isempty(plotTitle)
     plotTitle = 'Environment';
@@ -28,8 +31,8 @@ for k = 1:numel(obstacles)
     plot(obstacles{k}(:,1), obstacles{k}(:,2), '.k', 'LineWidth', 1)
 end
 
-% edges
-if PLOT_EDGES
+if params.plotEdges
+    % edges
     for k = 1:nPoints
         for m = k+1:nPoints
             if M(k,m) > 0

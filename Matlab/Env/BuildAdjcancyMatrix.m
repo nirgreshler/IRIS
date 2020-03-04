@@ -6,8 +6,8 @@ for k = 1:nPoints
     for m = k+1:nPoints
         p2 = points(m,:);
         if CollisionDetector(p1, p2, obstacles, connectionRadius)
-            M(k,m) = 1;
-            M(m,k) = 1;
+            M(k,m) = 1; % norm(p1-p2);
+            M(m,k) = M(k,m);
         end
     end
     disp(['Building Adjancy Matrix: ', num2str(k) '/' num2str(nPoints)]);

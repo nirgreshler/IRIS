@@ -1,4 +1,5 @@
 function [clustersKmeans, clustersSpectral] = ClusterPoints(points, M, k)
+rng(1);
 % kmean
 D = diag(sum(M));
 L = D-M;
