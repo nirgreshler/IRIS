@@ -21,7 +21,7 @@ PLOT_CLUSTERING = false;
 PLOT_HISTOGRAMS = false;
 
 % SOLVING
-RUN_SEARCH = true;
+RUN_SEARCH = false;
 initial_p = 0.8;
 initial_eps = 0.8;
 tightening_rate = 0;
@@ -62,24 +62,26 @@ if RUN_SEARCH
     if status
         error('Failed to run');
     end
-    
-    % Read result
-    res_file = [base_name '\' env_name '_result'];
+end
+
+% Read result
+res_file = [base_name '\' env_name '_result'];
+if exist(res_file, 'file')
     fid = fopen(res_file);
     C = textscan(fid, '%s', 'delimiter','\n');
     fclose(fid);
     C = C{1, 1};
-%     [status, output] = system(['wsl cat ' res_file]);
-%     if status
-%         error('Failed to read output');
-%     end
-
-    out = C{end};   
-%     splt = strsplit(output, '\n');
-%     out = splt{end - 1};
+    %     [status, output] = system(['wsl cat ' res_file]);
+    %     if status
+    %         error('Failed to read output');
+    %     end
+    
+    out = C{end};
+    %     splt = strsplit(output, '\n');
+    %     out = splt{end - 1};
     outsplt = strsplit(strtrim(out), ' ');
     pathIdx = str2double(outsplt(2:end)) + 1;
-
+    
     % cluster
     [clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), Edges2M(edges));
     % plot enviroment
@@ -137,17 +139,17 @@ for k_idx = 1:length(k_vec)
         idx = clustersSpectral;
     else
         idx = clustersKmeans;
-%         idx = kmeans(conf_data, k, 'Distance', dist);
+        %         idx = kmeans(conf_data, k, 'Distance', dist);
     end
-
+    
     if PLOT_CLUSTERING
-       PlotEnvironment(conf_data, idx, M, inspectionPoints, obstacles, params.homeSize, ['k=', num2str(k)]);
+        PlotEnvironment(conf_data, idx, M, inspectionPoints, obstacles, params.homeSize, ['k=', num2str(k)]);
     end
     
     % Check which coverage we have in each cluster
     cov_set_per_cluster = cell(k, 1);
     if PLOT_HISTOGRAMS
-        figure; 
+        figure;
     end
     for i = 1:k
         cl_vertex_idx = idx == i;
@@ -155,12 +157,12 @@ for k_idx = 1:length(k_vec)
         cl_vertex_cov = vertex(cl_vertex_idx, 4:end);
         cl_vertex_cov_col = cl_vertex_cov(:);
         cl_vertex_cov_col = cl_vertex_cov_col(~isnan(cl_vertex_cov_col));
-%         figure; histogram(cl_vertex_cov_col, unique(cl_vertex_cov_col))
+        %         figure; histogram(cl_vertex_cov_col, unique(cl_vertex_cov_col))
         [upts, ia, ic] = unique(cl_vertex_cov_col);
         num_inspection_points = length(upts);
         N = arrayfun(@(x) sum(cl_vertex_cov_col == x), upts);
-%         h = histcounts(cl_vertex_cov_col, unique(cl_vertex_cov_col)); 
-%         N = h.BinCounts;
+        %         h = histcounts(cl_vertex_cov_col, unique(cl_vertex_cov_col));
+        %         N = h.BinCounts;
         maxN = max(N);
         distb = N ./ maxN;
         
@@ -176,7 +178,7 @@ for k_idx = 1:length(k_vec)
     if PLOT_HISTOGRAMS
         title(['K=' num2str(k)]);
     end
-%     legend('show');
+    %     legend('show');
     sim_mat = ones(k, k)*nan;
     
     for i = 1:k

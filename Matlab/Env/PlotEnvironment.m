@@ -1,4 +1,7 @@
 function PlotEnvironment(points, clusters, M, inspectionPoints, obstacles, homeSize, plotTitle)
+
+PLOT_EDGES = false;
+
 if ~exist('plotTitle', 'var') || isempty(plotTitle)
     plotTitle = 'Environment';
 end
@@ -25,12 +28,14 @@ for k = 1:numel(obstacles)
 end
 
 % edges
-for k = 1:nPoints
-    for m = k+1:nPoints
-        if M(k,m) > 0
-            p1 = points(k,:);
-            p2 = points(m,:);
-            plot([p1(1) p2(1)], [p1(2) p2(2)], '--k')
+if PLOT_EDGES
+    for k = 1:nPoints
+        for m = k+1:nPoints
+            if M(k,m) > 0
+                p1 = points(k,:);
+                p2 = points(m,:);
+                plot([p1(1) p2(1)], [p1(2) p2(2)], '--k')
+            end
         end
     end
 end
