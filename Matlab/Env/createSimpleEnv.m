@@ -58,7 +58,7 @@ end
 points = points(validIdcs,:);
 nPoints = size(points,1);
 %% Build adjacency matrix
-M = BuildAdjancyMatrix(points, obstacles, connectionRadius);
+M = BuildAdjcancyMatrix(points, obstacles, connectionRadius);
 %% Get inspection point for each point
 pointsInSight = zeros(nPoints, size(inspectionPoints,1));
 timeVisVec = zeros(nPoints,1);
