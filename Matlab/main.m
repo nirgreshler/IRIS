@@ -22,7 +22,7 @@ PLOT_HISTOGRAMS = false;
 
 % SOLVING
 RUN_SEARCH = true;
-initial_p = 0.95;
+initial_p = 0.8;
 initial_eps = 0.8;
 tightening_rate = 0;
 method = 0;
