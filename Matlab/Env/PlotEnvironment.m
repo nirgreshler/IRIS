@@ -24,19 +24,19 @@ for k = 1:numel(obstacles)
     plot(obstacles{k}(:,1), obstacles{k}(:,2), '.k', 'LineWidth', 1)
 end
 
-% edges
-for k = 1:nPoints
-    for m = k+1:nPoints
-        if M(k,m) > 0
-            p1 = points(k,:);
-            p2 = points(m,:);
-            plot([p1(1) p2(1)], [p1(2) p2(2)], '--k')
-        end
-    end
-end
+% % edges
+% for k = 1:nPoints
+%     for m = k+1:nPoints
+%         if M(k,m) > 0
+%             p1 = points(k,:);
+%             p2 = points(m,:);
+%             plot([p1(1) p2(1)], [p1(2) p2(2)], '--k')
+%         end
+%     end
+% end
 
 % points
-colorOrder = get(gca, 'ColorOrder');
+colorOrder = linspecer(nClusters);
 nColors = size(colorOrder,1);
 for k = 1:nClusters
     color = colorOrder(mod(k-1,nColors)+1,:);

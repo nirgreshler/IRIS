@@ -3,7 +3,7 @@ clc
 clear
 
 % env_name = 'planar_1000';
-env_name = 'syn_4rooms';
+env_name = 'syn_9rooms';
 
 K_MEANS_START = 2;
 K_MEANS_END = 10;
@@ -16,21 +16,21 @@ SPECTRAL = true;
 % rng(K_MEANS_START);
 
 % PLOTTING
-PLOT_ENVIRONMENMT = false;
-PLOT_CLUSTERING = true;
+PLOT_ENVIRONMENMT = true;
+PLOT_CLUSTERING = false;
 PLOT_HISTOGRAMS = false;
 
 % SOLVING
 RUN_SEARCH = true;
-initial_p = 0.99;
+initial_p = 0.95;
 initial_eps = 0.8;
 tightening_rate = 0;
 method = 0;
 
 dist = 'sqeuclidean';
 base_name = fullfile(pwd, 'Graphs');
-% wsl_path = '/home/nirgreshler/Project/IRIS';
-wsl_path = '/home/galgreshler/Project/IRIS';
+username = getenv('USERNAME');
+wsl_path = ['/home/' username '/Project/IRIS'];
 search_path = [wsl_path, '/debug/app/search_graph'];
 base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];
 
@@ -38,15 +38,16 @@ base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
 M = Edges2M(edges(:,[1 2 7]));
 if PLOT_ENVIRONMENMT && ~isempty(obstacles)
-    [clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), Edges2M(edges));
-    PlotEnvironment(conf(:,2:3), clustersKmeans, M, inspectionPoints, obstacles, params.homeSize);
+    [clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), Edges2M(edges), 9);
+    PlotEnvironment(conf(:,2:3), clustersKmeans, M, inspectionPoints, obstacles, params.homeSize , 'K-Means');
+    PlotEnvironment(conf(:,2:3), clustersSpectral, M, inspectionPoints, obstacles, params.homeSize , 'Spectral');
 end
 
 if RUN_SEARCH
     % Run in WSL
     file_to_read = [base_name_in_wsl '/' env_name];
     file_to_write = [base_name_in_wsl '/' env_name];
-    status = system([
+    cmd = [
         'wsl ' ...
         search_path ' ' ...
         file_to_read ' ' ...
@@ -54,7 +55,10 @@ if RUN_SEARCH
         num2str(initial_eps) ' ' ...
         num2str(tightening_rate) ' ' ...
         num2str(method) ' ' ...
-        file_to_write]);
+        file_to_write];
+    disp('Executing command on WSL: ');
+    disp(cmd);
+    status = system(cmd);
     if status
         error('Failed to run');
     end
@@ -85,7 +89,19 @@ if RUN_SEARCH
         plot([conf(pathIdx(i), 2), conf(pathIdx(i+1), 2)], [conf(pathIdx(i), 3), conf(pathIdx(i+1), 3)], ...
             'g', 'Marker', 'o', 'LineWidth', 2)
     end
+    
+    % calculate coverage set
+    cov_set = [];
+    for i = 1:length(pathIdx)
+        cov = vertex(pathIdx(i), 5:end);
+        cov_set = [cov_set cov(~isnan(cov))];
+    end
+    cov_set = unique(cov_set) + 1;
+    scatter(inspectionPoints(cov_set, 1), inspectionPoints(cov_set, 2), '*')
 end
+
+return;
+
 % Show the graph
 % s = edges(:, 1) + 1;
 % t = edges(:, 2) + 1;
