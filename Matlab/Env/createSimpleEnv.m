@@ -58,20 +58,7 @@ end
 points = points(validIdcs,:);
 nPoints = size(points,1);
 %% Build adjacency matrix
-M = zeros(nPoints);
-for k = 1:nPoints
-    p1 = points(k,:);
-    for m = k+1:nPoints
-        p2 = points(m,:);
-        if CollisionDetector(p1, p2, obstacles, connectionRadius)
-            M(k,m) = 1;
-            M(m,k) = 1;
-        end
-    end
-    disp([num2str(k) '/' num2str(nPoints)]);
-end
-edges = M2Edges(M);
-Mtag = Edges2M(edges);
+M = BuildAdjancyMatrix(points, obstacles, connectionRadius);
 %% Get inspection point for each point
 pointsInSight = zeros(nPoints, size(inspectionPoints,1));
 timeVisVec = zeros(nPoints,1);
