@@ -40,8 +40,8 @@ M = Edges2M(edges(:,[1 2 7]));
 if PLOT_ENVIRONMENMT && ~isempty(obstacles)
     M(M>0)=1;
     [clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), M);
-    PlotEnvironment(conf(:,2:3), clustersKmeans, M, inspectionPoints, obstacles, params.homeSize , 'K-Means');
-    PlotEnvironment(conf(:,2:3), clustersSpectral, M, inspectionPoints, obstacles, params.homeSize , 'Spectral');
+    PlotEnvironment(params, conf(:,2:3), clustersKmeans, M, inspectionPoints, obstacles, 'K-Means');
+    PlotEnvironment(params, conf(:,2:3), clustersSpectral, M, inspectionPoints, obstacles, 'Spectral');
     
     points = conf(:,2:3);
     nPoints = size(points,1);
@@ -51,7 +51,7 @@ if PLOT_ENVIRONMENMT && ~isempty(obstacles)
     sightM(sightM>0)=1;
     [~, clustersSpectralInspe] = ClusterPoints([points; inspectionPoints], sightM);
     clustersSpectralInspe = clustersSpectralInspe(1:nPoints);
-    PlotEnvironment(conf(:,2:3), clustersSpectralInspe, M, inspectionPoints, obstacles, params.homeSize , 'Spectral with Inpection');
+    PlotEnvironment(params, conf(:,2:3), clustersSpectralInspe, M, inspectionPoints, obstacles, 'Spectral with Inpection');
 end
 
 if RUN_SEARCH
@@ -94,7 +94,7 @@ if RUN_SEARCH
     % cluster
     [clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), Edges2M(edges));
     % plot enviroment
-    PlotEnvironment(conf(:,2:3), clustersKmeans, M, inspectionPoints, obstacles, params.homeSize);
+    PlotEnvironment(params, conf(:,2:3), clustersKmeans, M, inspectionPoints, obstacles);
     % plot path
     for i = 1:length(pathIdx) - 1
         plot([conf(pathIdx(i), 2), conf(pathIdx(i+1), 2)], [conf(pathIdx(i), 3), conf(pathIdx(i+1), 3)], ...
@@ -152,7 +152,7 @@ for k_idx = 1:length(k_vec)
     end
 
     if PLOT_CLUSTERING
-       PlotEnvironment(conf_data, idx, M, inspectionPoints, obstacles, params.homeSize, ['k=', num2str(k)]);
+       PlotEnvironment(params, conf_data, idx, M, inspectionPoints, obstacles, ['k=', num2str(k)]);
     end
     
     % Check which coverage we have in each cluster

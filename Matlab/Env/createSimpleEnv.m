@@ -16,6 +16,7 @@ fol = fileparts(mfilename('fullpath'));
 
 outputFolder = fullfile(fol, '..', 'Graphs', filesep);
 saveEnv = false;
+params.homeSize = homeSize;
 %% Create points
 inspectionPoints = GetInspectionPoints(homeSize, nInspectionPoints);
 [obstacles, doors] = GetObstacles(homeSize, nRooms, doorSize, envGrid);
@@ -74,8 +75,8 @@ end
 %% Clustering
 [clusters, clustersSpectral] = ClusterPoints(points, M, nRooms);
 %% Plot enviroment
-PlotEnvironment(points, clusters, M, inspectionPoints, obstacles, homeSize, 'Clustered with K-Means');
-PlotEnvironment(points, clustersSpectral, M, inspectionPoints, obstacles, homeSize, 'Clustered with Spectral Clustering');
+PlotEnvironment(params, points, clusters, M, inspectionPoints, obstacles, 'Clustered with K-Means');
+PlotEnvironment(params, points, clustersSpectral, M, inspectionPoints, obstacles, 'Clustered with Spectral Clustering');
 if saveEnv
     %% Write text files
     filename = ['syn_' num2str(nRooms) 'rooms'];
