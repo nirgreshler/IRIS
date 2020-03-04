@@ -38,9 +38,20 @@ base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
 M = Edges2M(edges(:,[1 2 7]));
 if PLOT_ENVIRONMENMT && ~isempty(obstacles)
-    [clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), Edges2M(edges), 9);
+    M(M>0)=1;
+    [clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), M);
     PlotEnvironment(conf(:,2:3), clustersKmeans, M, inspectionPoints, obstacles, params.homeSize , 'K-Means');
     PlotEnvironment(conf(:,2:3), clustersSpectral, M, inspectionPoints, obstacles, params.homeSize , 'Spectral');
+    
+    points = conf(:,2:3);
+    nPoints = size(points,1);
+    sightM = BuildAdjcancyMatrix([points; inspectionPoints], obstacles, params.sightRadius);
+    sightM(1:nPoints, 1:nPoints) = M;
+    sightM(nPoints+1:end, nPoints+1:end) = 0;
+    sightM(sightM>0)=1;
+    [~, clustersSpectralInspe] = ClusterPoints([points; inspectionPoints], sightM);
+    clustersSpectralInspe = clustersSpectralInspe(1:nPoints);
+    PlotEnvironment(conf(:,2:3), clustersSpectralInspe, M, inspectionPoints, obstacles, params.homeSize , 'Spectral with Inpection');
 end
 
 if RUN_SEARCH

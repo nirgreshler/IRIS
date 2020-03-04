@@ -31,3 +31,4 @@ build*/
 debug/
 .vscode/
 *.asv
+Matlab/Graphs

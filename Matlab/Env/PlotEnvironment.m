@@ -11,6 +11,7 @@ if isempty(clusters)
     clusters = ones(nPoints,1);
 end
 nClusters = length(unique(clusters));
+plotTitle = [plotTitle, '(', num2str(nClusters), ' Clusters)'];
 figure; hold all; axis equal
 
 % outside walls
