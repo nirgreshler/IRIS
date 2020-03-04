@@ -36,10 +36,25 @@ base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];
 
 [conf, vertex, edges] = read_graph(fullfile(base_name, env_name));
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
+
+% Perform clustering
 M = Edges2M(edges(:,[1 2 7]));
+M(M>0)=1;
+[clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), M);
+
+[bridge_conf, bridge_vertex, bridge_edges] = get_bridge_graph(conf, vertex, edges, clustersSpectral);
+
+% show the bridge graph
+PlotEnvironment(conf(:,2:3), clustersSpectral, M, inspectionPoints, obstacles, params.homeSize , 'Spectral');hold on;
+scatter(bridge_conf(:, 2), bridge_conf(:, 3), 'x', 'Linewidth', 1);
+for k = 1:size(bridge_edges, 1)
+    p1 = conf(bridge_edges(k, 1)+1, 2:3);
+    p2 = conf(bridge_edges(k, 2)+1, 2:3);
+    plot([p1(1) p2(1)], [p1(2) p2(2)], '--k')
+end
+
+
 if PLOT_ENVIRONMENMT && ~isempty(obstacles)
-    M(M>0)=1;
-    [clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), M);
     PlotEnvironment(conf(:,2:3), clustersKmeans, M, inspectionPoints, obstacles, params.homeSize , 'K-Means');
     PlotEnvironment(conf(:,2:3), clustersSpectral, M, inspectionPoints, obstacles, params.homeSize , 'Spectral');
     

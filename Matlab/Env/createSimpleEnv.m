@@ -15,7 +15,7 @@ samplingMethod = 'RRT'; % 'Uniform' / 'Sobol' / 'RRT'
 fol = fileparts(mfilename('fullpath'));
 
 outputFolder = fullfile(fol, '..', 'Graphs', filesep);
-saveEnv = false;
+saveEnv = true;
 %% Create points
 inspectionPoints = GetInspectionPoints(homeSize, nInspectionPoints);
 [obstacles, doors] = GetObstacles(homeSize, nRooms, doorSize, envGrid);
