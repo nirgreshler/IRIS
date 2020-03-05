@@ -1,7 +1,8 @@
 function clusters = InspectionClustering(params, points, pointsInSight)
 nPoints = size(points, 1);
+nInspectionPoints = size(points,2);
 % Remove points with no inspection from clustering
-invalidPointsIdcs = find(sum(pointsInSight,2) < size(inspectionPoints,1)*0.01);
+invalidPointsIdcs = find(sum(pointsInSight,2) < nInspectionPoints*0.01);
 validPointsIdcs = setxor(1:nPoints, invalidPointsIdcs);
 nPoints = length(validPointsIdcs);
 pointsInSight = pointsInSight(validPointsIdcs,:);
@@ -33,7 +34,7 @@ eigenValues = diag(eigenMat);
 eigenValues = eigenValues(abs(eigenValues) > 1e-6);
 dEigens = diff(eigenValues);
 [~, maxIdx] = max(dEigens);
-nClusters = maxIdx;
+nClusters = maxIdx+1;
 
 kSmallestEigenvalues = eigenValues(1:nClusters+1);
 kSmallestEigenvectors = V(:,1:nClusters+1);
@@ -42,7 +43,20 @@ z = zeros(nPoints, nClusters);
 for ii = 1:nPoints
     z(ii,:) = 1./kSmallestEigenvalues(2:end).*kSmallestEigenvectors(ii,2:end)';
 end
-clusters = kmeans(z, nClusters);
+[clusters, C] = kmeans(z, nClusters);
+
+% Remove small clusters
+N = histcounts(clusters, nClusters);
+smallClusters = find(N < 0.01*nPoints);
+largeClusters = setxor(1:nClusters, smallClusters);
+for c = 1:length(smallClusters)
+    pointsOfSmallClusters = find(clusters == smallClusters(c));
+    for k = 1:length(pointsOfSmallClusters)
+        [~,idx] = min(sqrt(sum((z(pointsOfSmallClusters(k),:)-C(largeClusters,:)).^2,2)));
+        clusters(pointsOfSmallClusters(k)) = largeClusters(idx);
+    end
+end
+nClusters = length(unique(clusters));
 
 clustersAll(validPointsIdcs) = clusters;
 clustersAll(invalidPointsIdcs) = nClusters+1;
