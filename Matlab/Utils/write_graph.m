@@ -5,7 +5,7 @@ nPoints = size(conf, 1);
 % conf
 fId = fopen([pathToWrite '_conf'], 'w');
 for k = 1:nPoints
-    fprintf(fId, '%d %f %f\n', conf(k, 1), conf(k, 1), conf(k, 3));
+    fprintf(fId, '%d %f %f\n', conf(k, 1), conf(k, 2), conf(k, 3));
 end
 fclose(fId);
 
