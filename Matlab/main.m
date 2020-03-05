@@ -13,6 +13,7 @@ CVG_TH = 0.8;
 addpath(genpath(pwd))
 
 SPECTRAL = true;
+clusteringMethod = 'spectral'; % 'kmeans' / 'spectral' / 'inspection'
 
 % rng(K_MEANS_START);
 
@@ -40,16 +41,24 @@ base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];
 
 % Perform clustering
 M = Edges2M(edges(:,[1 2 7]));
-[clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), M, num_rooms);
+switch clusteringMethod
+    case 'kmeans'
+        clusters = KMeansClustering(params, conf(:,2:3), num_rooms);
+    case 'spectral'
+        clusters = SpectralClustering(params, conf(:,2:3), M, num_rooms);
+    case 'inspection'
+        pointsInSight = GetPointsInSight(params, conf(:,2:3), inspectionPoints, obstacles);
+        clusters = InspectionClustering(params, conf(:,2:3), pointsInSight);
+end
 
 % build the bridge graph
-[bridge_conf, bridge_vertex, bridge_edges] = get_bridge_graph(conf, vertex, edges, clustersSpectral);
+[bridge_conf, bridge_vertex, bridge_edges] = get_bridge_graph(conf, vertex, edges, clusters);
 
 % add the inner edges within a cluster
 edges_added = 0;
-numClusters = length(unique(clustersSpectral));
+numClusters = length(unique(clusters));
 for iClus = 1:numClusters
-    vertInClus = vertex(clustersSpectral == iClus, 1);  
+    vertInClus = vertex(clusters == iClus, 1);  
     vertInClusInBridge = intersect(vertInClus, bridge_vertex(:, 1));  
     points = conf(vertInClus + 1, 2:3);
     Mc = BuildAdjcancyMatrix(points, obstacles, params.connectionRadius);
@@ -70,7 +79,7 @@ end
 disp(['Added ' num2str(edges_added) ' edges within clusters']);
 
 % show the bridge graph
-PlotEnvironment(params, conf(:,2:3), clustersSpectral, M, inspectionPoints, obstacles, 'Spectral');
+PlotEnvironment(params, conf(:,2:3), clusters, M, inspectionPoints, obstacles, 'Spectral');
 % scatter(bridge_conf(:, 2), bridge_conf(:, 3), 'x', 'Linewidth', 1);
 ubridge_edges = unique(bridge_edges, 'rows');
 for k = 1:size(ubridge_edges, 1)
@@ -79,19 +88,6 @@ for k = 1:size(ubridge_edges, 1)
     plot([p1(1) p2(1)], [p1(2) p2(2)], '--k')
 end
 
-% create the files
-nPoints = size(bridge_vertex, 1);
-pointsInSight = zeros(nPoints, size(inspectionPoints,1));
-timeVisVec = zeros(nPoints,1);
-for k = 1:nPoints
-    tic
-    for p = 1:size(inspectionPoints,1)
-        if CollisionDetector(bridge_conf(k,2:3), inspectionPoints(p,:), obstacles, params.sightRadius)
-            pointsInSight(k,p) = 1;
-        end
-    end
-    timeVisVec(k) = toc;
-end
 % need to fix indices
 nNodes = size(bridge_vertex(:, 1), 1);
 idx_in_edges = bridge_vertex(:, 1);
@@ -108,18 +104,7 @@ write_graph(fullfile(base_name, env_name), bridge_conf, bridge_vertex, unique(br
 % Graph2Text(params, fullfile(base_name, env_name), bridge_conf(:, 2:3), pointsInSight, M);
 
 if PLOT_ENVIRONMENMT && ~isempty(obstacles)
-    PlotEnvironment(params, conf(:,2:3), clustersKmeans, M, inspectionPoints, obstacles, 'K-Means');
-    PlotEnvironment(params, conf(:,2:3), clustersSpectral, M, inspectionPoints, obstacles, 'Spectral');
-    
-    points = conf(:,2:3);
-    nPoints = size(points,1);
-    sightM = BuildAdjcancyMatrix([points; inspectionPoints], obstacles, params.sightRadius);
-    sightM(1:nPoints, 1:nPoints) = M;
-    sightM(nPoints+1:end, nPoints+1:end) = 0;
-    sightM(sightM>0)=1;
-    [~, clustersSpectralInspe] = ClusterPoints([points; inspectionPoints], sightM);
-    clustersSpectralInspe = clustersSpectralInspe(1:nPoints);
-    PlotEnvironment(params, conf(:,2:3), clustersSpectralInspe, M, inspectionPoints, obstacles, 'Spectral with Inpection');
+    PlotEnvironment(params, conf(:,2:3), clusters, M, inspectionPoints, obstacles, clusteringMethod);
 end
 
 if RUN_SEARCH
@@ -162,9 +147,17 @@ if exist(res_file, 'file')
     pathIdx = str2double(outsplt(2:end)) + 1;
     
     % cluster
-    [clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), Edges2M(edges));
+    switch clusteringMethod
+        case 'kmeans'
+            clusters = KMeansClustering(params, conf(:,2:3), num_rooms);
+        case 'spectral'
+            clusters = SpectralClustering(params, conf(:,2:3), M, num_rooms);
+        case 'inspection'
+            pointsInSight = GetPointsInSight(params, conf(:,2:3), inspectionPoints, obstacles);
+            clusters = InspectionClustering(params, conf(:,2:3), pointsInSight);
+    end
     % plot enviroment
-    PlotEnvironment(params, conf(:,2:3), clustersKmeans, M, inspectionPoints, obstacles);
+    PlotEnvironment(params, conf(:,2:3), clusters, M, inspectionPoints, obstacles);
     % plot path
     for i = 1:length(pathIdx) - 1
         plot([conf(pathIdx(i), 2), conf(pathIdx(i+1), 2)], [conf(pathIdx(i), 3), conf(pathIdx(i+1), 3)], ...
@@ -212,17 +205,19 @@ diff_vec = zeros(1, length(k_vec));
 for k_idx = 1:length(k_vec)
     k = k_vec(k_idx);
     
-    [clustersKmeans, clustersSpectral] = ClusterPoints(conf_data, Edges2M(edges), k);
-    
-    if SPECTRAL
-        idx = clustersSpectral;
-    else
-        idx = clustersKmeans;
-        %         idx = kmeans(conf_data, k, 'Distance', dist);
+    M = Edges2M(edges);
+    switch clusteringMethod
+        case 'kmeans'
+            clusters = KMeansClustering(params, conf(:,2:3), k);
+        case 'spectral'
+            clusters = SpectralClustering(params, conf(:,2:3), M, k);
+        case 'inspection'
+            warning('Inspection Clustering is not relevant here')
+            break
     end
     
     if PLOT_CLUSTERING
-       PlotEnvironment(params, conf_data, idx, M, inspectionPoints, obstacles, ['k=', num2str(k)]);
+       PlotEnvironment(params, conf_data, clusters, M, inspectionPoints, obstacles, ['k=', num2str(k)]);
     end
     
     % Check which coverage we have in each cluster

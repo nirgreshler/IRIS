@@ -9,17 +9,18 @@ envGrid = 0.01;
 doorSize = 0.25;
 nPoints = 2000;
 nInspectionPoints = 400;
-connectionRadius = 0.6;
+connectionRadius = 0.8;
 sightRadius = roomSize*sqrt(2)/2;
 samplingMethod = 'RRT'; % 'Uniform' / 'Sobol' / 'RRT'
 fol = fileparts(mfilename('fullpath'));
-
+rng('shuffle')
 outputFolder = fullfile(fol, '..', 'Graphs', filesep);
 saveEnv = true;
 params.homeSize = homeSize;
 params.connectionRadius = connectionRadius;
 params.sightRadius = sightRadius;
 params.doorSize = doorSize;
+params.nRooms = nRooms;
 
 %% Create points
 inspectionPoints = GetInspectionPoints(homeSize, nInspectionPoints);
@@ -34,9 +35,9 @@ switch samplingMethod
         points = sampler.net(nPoints)*homeSize;
     case 'RRT'
         eta = 0.5;
-        startPoint = [1e-3 1e-3]; %envGrid*round(rand(1,2)*homeSize/envGrid);
+        startPoint = [envGrid envGrid];
         points = startPoint;
-        for k = 1:nPoints
+        while size(points,1) < nPoints
             m = 0;
             while m == 0
                 randPoint = envGrid*round(rand(1,2)*homeSize/envGrid);
@@ -67,10 +68,9 @@ M = BuildAdjcancyMatrix(points, obstacles, connectionRadius);
 %% Get inspection point for each point
 [pointsInSight, timeVisVec] = GetPointsInSight(params, points, inspectionPoints, obstacles);
 %% Clustering
-[clusters, clustersSpectral] = ClusterPoints(points, M, nRooms);
+clusters = KMeansClustering(params, points, params.nRooms);
 %% Plot enviroment
 PlotEnvironment(params, points, clusters, M, inspectionPoints, obstacles, 'Clustered with K-Means');
-PlotEnvironment(params, points, clustersSpectral, M, inspectionPoints, obstacles, 'Clustered with Spectral Clustering');
 if saveEnv
     %% Write text files
     filename = ['syn_' num2str(nRooms) 'rooms'];
