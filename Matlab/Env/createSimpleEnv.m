@@ -7,7 +7,7 @@ nRooms = nSqrRooms^2;
 roomSize = homeSize/nSqrRooms;
 envGrid = 0.01;
 doorSize = 0.25;
-nPoints = 2000;
+nPoints = 1500;
 nInspectionPoints = 400;
 connectionRadius = 0.8;
 sightRadius = roomSize*sqrt(2)/2;
@@ -68,7 +68,7 @@ M = BuildAdjcancyMatrix(points, obstacles, connectionRadius);
 %% Get inspection point for each point
 [pointsInSight, timeVisVec] = GetPointsInSight(params, points, inspectionPoints, obstacles);
 %% Clustering
-clusters = KMeansClustering(params, points, params.nRooms);
+clusters = InspectionClustering(params, points, pointsInSight);
 %% Plot enviroment
 PlotEnvironment(params, points, clusters, M, inspectionPoints, obstacles, 'Clustered with K-Means');
 if saveEnv

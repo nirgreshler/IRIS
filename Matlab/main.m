@@ -1,4 +1,4 @@
-% close all
+close all
 clc
 clear
 
@@ -54,22 +54,32 @@ end
 % build the bridge graph
 [bridge_conf, bridge_vertex, bridge_edges] = get_bridge_graph(conf, vertex, edges, clusters);
 
+plotGraph(bridge_conf, bridge_vertex, bridge_edges);
+title('Bridge graph BEFORE inner edges');
+
 % add the inner edges within a cluster
 edges_added = 0;
 numClusters = length(unique(clusters));
 for iClus = 1:numClusters
-    vertInClus = vertex(clusters == iClus, 1);  
-    vertInClusInBridge = intersect(vertInClus, bridge_vertex(:, 1));  
+    vertInClus = vertex(clusters == iClus, 1); % All vertices ID in this cluster 
+    vertInClusNames = strsplit(num2str(vertInClus'));
+    vertInClusInBridge = intersect(vertInClus, bridge_vertex(:, 1)); % All bridge-vertices ID in this cluster
+    vertInClusInBridgeNames = strsplit(num2str(vertInClusInBridge'));
+    
+    % We want to find the shortest path between all bridge nodes to all
+    % bridge nodes
     points = conf(vertInClus + 1, 2:3);
-    Mc = BuildAdjcancyMatrix(points, obstacles, params.connectionRadius);
+    Mc = BuildAdjcancyMatrix(points, obstacles, params.connectionRadius); % TODO take from original M
+    g = graph(Mc, vertInClusNames);
+    d = distances(g, vertInClusInBridgeNames, vertInClusInBridgeNames, 'Method' ,'positive');
+    d = roundn(d, -4);
+    assert(issymmetric(d));
+    
     for i = 1:length(vertInClusInBridge)-1
         for j = i+1:length(vertInClusInBridge)
-            startIdx = find(all(points == conf(vertInClusInBridge(i) + 1, 2:3),2));
-            goalIdx = find(all(points == conf(vertInClusInBridge(j) + 1, 2:3),2));
-            pathFound = AStar(points, startIdx, goalIdx, Mc);
-            if ~isempty(pathFound)
-                cost = sum(sqrt(sum(diff(pathFound(:,2:3)).^2,2)));
-                newEdge = [vertInClusInBridge(i), vertInClusInBridge(j), 1, 1, 0, 0, cost]; % TODO 1 1 0 0
+            dist = d(i, j);
+            if dist ~= inf
+                newEdge = [vertInClusInBridge(i), vertInClusInBridge(j), 1, 1, 0, 0, dist]; % TODO 1 1 0 0
                 bridge_edges = [bridge_edges; newEdge];
                 edges_added = edges_added + 1;
             end
@@ -77,6 +87,9 @@ for iClus = 1:numClusters
     end
 end
 disp(['Added ' num2str(edges_added) ' edges within clusters']);
+
+plotGraph(bridge_conf, bridge_vertex, bridge_edges);
+title('Bridge graph AFTER inner edges');
 
 % show the bridge graph
 PlotEnvironment(params, conf(:,2:3), clusters, M, inspectionPoints, obstacles, 'Spectral');

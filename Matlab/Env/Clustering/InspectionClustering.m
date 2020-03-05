@@ -1,7 +1,8 @@
 function clusters = InspectionClustering(params, points, pointsInSight)
 nPoints = size(points, 1);
+nInspectionPoints = size(pointsInSight,2);
 % Remove points with no inspection from clustering
-invalidPointsIdcs = find(sum(pointsInSight,2) < size(inspectionPoints,1)*0.01);
+invalidPointsIdcs = find(sum(pointsInSight,2) < nInspectionPoints*0.01);
 validPointsIdcs = setxor(1:nPoints, invalidPointsIdcs);
 nPoints = length(validPointsIdcs);
 pointsInSight = pointsInSight(validPointsIdcs,:);
