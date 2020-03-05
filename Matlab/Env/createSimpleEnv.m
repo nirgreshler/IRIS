@@ -8,7 +8,6 @@ roomSize = homeSize/nSqrRooms;
 envGrid = 0.01;
 doorSize = 0.25;
 nPoints = 1500;
-nPoints = 1000;
 nInspectionPoints = 400;
 connectionRadius = 0.8;
 sightRadius = roomSize*sqrt(2)/2;
@@ -17,7 +16,7 @@ fol = fileparts(mfilename('fullpath'));
 rng('shuffle')
 clusteringMethod = 'inspection';
 outputFolder = fullfile(fol, '..', 'Graphs', filesep);
-saveEnv = false;
+saveEnv = true;
 params.homeSize = homeSize;
 params.connectionRadius = connectionRadius;
 params.sightRadius = sightRadius;

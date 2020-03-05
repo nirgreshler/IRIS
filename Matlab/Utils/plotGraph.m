@@ -6,8 +6,9 @@ switch nargin
             filename = varargin{1};
             [~, graphName] = fileparts(filename);
             [conf, vertex, edges] = read_graph(filename);
-        elseif isa(varargin{1}, 'Graph')
+        elseif isa(varargin{1}, 'graph')
             G = varargin{1};
+            graphName = inputname(1);
         end
     case 3
         graphName = inputname(1);

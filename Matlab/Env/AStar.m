@@ -1,4 +1,4 @@
-function pathFound = AStar(points, startIdx, goalIdx, M)
+function [pathFound, cost] = AStar(points, startIdx, goalIdx, M)
 
 nPoints = size(points,1);
 startPoint = points(startIdx, :);
@@ -22,6 +22,7 @@ while ~isempty(openSet)
     
     if all(currentPoint(2:3)==goalPoint)
         pathFound = ReconstructPath(parents, [goalIdx goalPoint]);
+        cost = sum(sqrt(sum(diff(pathFound(:,2:3)).^2,2)));
         return
     end
     
