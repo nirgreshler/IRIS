@@ -16,7 +16,7 @@ fol = fileparts(mfilename('fullpath'));
 rng('shuffle')
 clusteringMethod = 'inspection';
 outputFolder = fullfile(fol, '..', 'Graphs', filesep);
-saveEnv = true;
+saveEnv = false;
 params.homeSize = homeSize;
 params.connectionRadius = connectionRadius;
 params.sightRadius = sightRadius;
@@ -76,6 +76,7 @@ switch clusteringMethod
         clusters = SpectralClustering(params, points, M, params.nRooms);
     case 'inspection'
         params.unifyBlindPoints = true;
+%         params.lapalacianType = 'rw';
         clusters = InspectionClustering(params, points, pointsInSight, M);
 end
 %% Plot enviroment

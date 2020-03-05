@@ -33,39 +33,10 @@ for k = 1:nPoints-1
         end
     end
 end
-D = diag(sum(Ms));
-L = D-Ms;
-[V,eigenMat] = eig(L);
-
-eigenValues = diag(eigenMat);
-eigenValues = eigenValues(abs(eigenValues) > 1e-6);
-dEigens = diff(eigenValues);
-[~, maxIdx] = max(dEigens);
-nClusters = min(maxIdx+1, params.maxClusters);
-
-kSmallestEigenvalues = eigenValues(1:nClusters+1);
-kSmallestEigenvectors = V(:,1:nClusters+1);
-
-z = zeros(nPoints, nClusters);
-for ii = 1:nPoints
-    z(ii,:) = 1./kSmallestEigenvalues(2:end).*kSmallestEigenvectors(ii,2:end)';
-end
-[clusters, C] = kmeans(z, nClusters);
-
-% Remove small clusters
-N = histcounts(clusters, nClusters);
-smallClusters = find(N < 0.01*nPoints);
-largeClusters = setxor(1:nClusters, smallClusters);
-for c = 1:length(smallClusters)
-    pointsOfSmallClusters = find(clusters == smallClusters(c));
-    for k = 1:length(pointsOfSmallClusters)
-        [~,idx] = min(sqrt(sum((z(pointsOfSmallClusters(k),:)-C(largeClusters,:)).^2,2)));
-        clusters(pointsOfSmallClusters(k)) = largeClusters(idx);
-    end
-end
-nClusters = length(unique(clusters));
-
+validPoints = points(validPointsIdcs,:);
+clusters = SpectralClustering(params, validPoints, Ms);
 clustersAll(validPointsIdcs) = clusters;
+nClusters = length(unique(clusters));
 
 if params.unifyBlindPoints
     clustersAll(invalidPointsIdcs) = nClusters+1;
@@ -77,7 +48,5 @@ else
     iClusters = iClusters+max(unique(clusters));
     clustersAll(invalidPointsIdcs) = iClusters;
 end
-
-
 
 clusters = clustersAll;

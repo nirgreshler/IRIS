@@ -1,4 +1,4 @@
-function clusters = SpectralClustering(params, points, M, nClusters)
+function [clusters, C] = SpectralClustering(params, points, M, nClusters)
 if isempty(params)
     params = struct;
 end
@@ -11,17 +11,27 @@ end
 if ~isfield(params, 'normalizeM')
     params.normalizeM = true;
 end
+if ~isfield(params, 'laplacianType')
+    params.laplacianType = 'normal';
+end
 if params.normalizeM
     M(M > 0) = 1;
 end
 D = diag(sum(M));
-L = D-M;
+switch params.laplacianType
+    case 'normal'
+        L = D-M;
+    case 'sym'
+        L = eye(size(M))-D^(-1/2)*M*D^(-1/2);
+    case 'rw'
+        L = eye(size(M))-D^-1*M;
+end
 [V,eigenMat] = eig(L);
 eigenValues = diag(eigenMat);
 if nargin < 4
     dEigens = diff(eigenValues);
-    [~, maxIdx] = max(dEigens(2:round(length(dEigens)/2)));
-    nClusters = max(min(maxIdx+1, params.maxClusters), params.minClusters);
+    [~, maxIdx] = max(dEigens(max(params.minClusters-1,1):params.maxClusters));
+    nClusters = maxIdx+1;
 end
 kSmallestEigenvalues = eigenValues(1:nClusters+1);
 kSmallestEigenvectors = V(:,1:nClusters+1);
@@ -43,3 +53,4 @@ for c = 1:length(smallClusters)
         clusters(pointsOfSmallClusters(k)) = largeClusters(idx);
     end
 end
+C = C(largeClusters,:);

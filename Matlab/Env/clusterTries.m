@@ -2,7 +2,7 @@ clear
 close all
 clc
 
-env_name = 'planar_1000';
+env_name = 'drone_1000';
 addpath(genpath(pwd))
 
 base_name = fullfile(pwd, 'Graphs');
@@ -20,9 +20,12 @@ for k = 1:nPoints
     pointsInSight(k, sights(k,idcs)+1) = 1;
 end
 params.normalizeM = false;
-% params.minClusters = 5;
-% clusters = SpectralClustering(params, points,M);
-clusters = InspectionClustering([], points, pointsInSight, M);
+params.minClusters = 2;
+params.maxClusters = 10;
+
+params.laplacianType = 'sym';
+clusters = SpectralClustering(params, points,M);
+% clusters = InspectionClustering([], points, pointsInSight, M);
 
 clusterIdcs = unique(clusters);
 nClusters = length(clusterIdcs);
@@ -30,6 +33,8 @@ nClusters = length(clusterIdcs);
 cInspectionPoints = cell(nClusters,1);
 for k = 1:nClusters
     pointsInCluster = clusters == clusterIdcs(k);
+%     [r,c] = find(pointsInSight(pointsInCluster,:));
+%     cInspectionPoints{k} = c;
     cInspectionPoints{k} = sum(pointsInSight(pointsInCluster,:));
 end
 colorOrder = linspecer(nClusters);
@@ -37,5 +42,6 @@ figure; hold all
 set(gca, 'colorOrder', colorOrder)
 for k = 1:nClusters
     plot(1:nInspectionPoints, cInspectionPoints{k}, '.-')
+%     histogram(cInspectionPoints{k}, nInspectionPoints)
 end
 
