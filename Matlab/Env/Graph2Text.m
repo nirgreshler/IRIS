@@ -5,12 +5,11 @@ if ~exist('timeVisVec', 'var') || isempty(timeVisVec)
     timeVisVec = zeros(nPoints,1);
 end
 
+paramFields = fieldnames(params);
 fId = fopen([pathToWrite '_params'], 'w');
-fprintf(fId, 'homeSize: %d\n', params.homeSize);
-fprintf(fId, 'doorSize: %f\n', params.doorSize);
-fprintf(fId, 'connectionRadius: %f\n', params.connectionRadius);
-fprintf(fId, 'sightRadius: %f\n', params.sightRadius);
-fprintf(fId, 'nRooms: %f\n', params.nRooms);
+for k = 1:numel(paramFields)
+    fprintf(fId, '%s: %s\n', paramFields{k}, num2str(params.(paramFields{k})));
+end
 fclose(fId);
 
 fId = fopen([pathToWrite '_conf'], 'w');

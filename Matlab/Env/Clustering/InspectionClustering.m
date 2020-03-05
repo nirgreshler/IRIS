@@ -1,6 +1,15 @@
-function clusters = InspectionClustering(params, points, pointsInSight)
+function clusters = InspectionClustering(params, points, pointsInSight, M)
+if isempty(params)
+    params = struct;
+end
+if ~isfield(params, 'unifyBlindPoints')
+    params.unifyBlindPoints = true;
+end
+if ~isfield(params, 'maxClusters')
+    params.maxClusters = 50;
+end
 nPoints = size(points, 1);
-nInspectionPoints = size(points,2);
+nInspectionPoints = size(pointsInSight,2);
 % Remove points with no inspection from clustering
 invalidPointsIdcs = find(sum(pointsInSight,2) < nInspectionPoints*0.01);
 validPointsIdcs = setxor(1:nPoints, invalidPointsIdcs);
@@ -13,8 +22,6 @@ for k = 1:nPoints-1
     clc
     fprintf('Calculating jacard distance... %.1f%%\n', 100*(k/(nPoints-1)))
     for j = k+1:nPoints
-        i1 = find(pointsInSight(k,:));
-        i2 = find(pointsInSight(j,:));
         un = sum(pointsInSight(k,:) | pointsInSight(j,:));
         if un == 0
             Ms(k,j) = 0;
@@ -34,7 +41,7 @@ eigenValues = diag(eigenMat);
 eigenValues = eigenValues(abs(eigenValues) > 1e-6);
 dEigens = diff(eigenValues);
 [~, maxIdx] = max(dEigens);
-nClusters = maxIdx+1;
+nClusters = min(maxIdx+1, params.maxClusters);
 
 kSmallestEigenvalues = eigenValues(1:nClusters+1);
 kSmallestEigenvectors = V(:,1:nClusters+1);
@@ -59,6 +66,18 @@ end
 nClusters = length(unique(clusters));
 
 clustersAll(validPointsIdcs) = clusters;
-clustersAll(invalidPointsIdcs) = nClusters+1;
+
+if params.unifyBlindPoints
+    clustersAll(invalidPointsIdcs) = nClusters+1;
+else
+    % Cluster the invalid points
+    Mi = M(invalidPointsIdcs, invalidPointsIdcs);
+    invalidPoints = points(invalidPointsIdcs,:);
+    iClusters = SpectralClustering(params, invalidPoints, Mi);
+    iClusters = iClusters+max(unique(clusters));
+    clustersAll(invalidPointsIdcs) = iClusters;
+end
+
+
 
 clusters = clustersAll;
