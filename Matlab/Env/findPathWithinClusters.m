@@ -15,7 +15,7 @@ base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
 M = Edges2M(edges(:,[1 2 7]));
 M(M>0)=1;
-[clustersKmeans, clustersSpectral] = ClusterPoints(conf(:,2:3), M);
+clustersSpectral = SpectralClustering(params, conf(:,2:3), M);
 %%
 clusterNum = 1;
 pointsInCluster = clustersSpectral == clusterNum;

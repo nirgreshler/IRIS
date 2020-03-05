@@ -20,6 +20,7 @@ params.homeSize = homeSize;
 params.connectionRadius = connectionRadius;
 params.sightRadius = sightRadius;
 params.doorSize = doorSize;
+params.nRooms = nRooms;
 
 %% Create points
 inspectionPoints = GetInspectionPoints(homeSize, nInspectionPoints);
@@ -67,32 +68,9 @@ M = BuildAdjcancyMatrix(points, obstacles, connectionRadius);
 %% Get inspection point for each point
 [pointsInSight, timeVisVec] = GetPointsInSight(params, points, inspectionPoints, obstacles);
 %% Clustering
-[clusters, clustersSpectral] = ClusterPoints(points, M);
-Ms = zeros(nPoints);
-for k = 1:nPoints-1
-    k
-    for j = k+1:nPoints
-        i1 = find(pointsInSight(k,:));
-        i2 = find(pointsInSight(j,:));
-        in = sum(pointsInSight(k,:) & pointsInSight(j,:));
-        un = sum(pointsInSight(k,:) | pointsInSight(j,:));
-        if un == 0
-            Ms(k,j) = 0;
-            Ms(j,k) = 0;
-        else
-            Ms(k,j) = in/un;
-            Ms(j,k) = Ms(k,j);
-        end
-    end
-end
-D = diag(sum(Ms));
-L = D-Ms;
-[V,eigenMat] = eig(L);
-kSmallestEigenvectors = V(:,1:nRooms+1);
-clustersSpectral = kmeans(kSmallestEigenvectors, nRooms);
+clusters = KMeansClustering(params, points, params.nRooms);
 %% Plot enviroment
 PlotEnvironment(params, points, clusters, M, inspectionPoints, obstacles, 'Clustered with K-Means');
-PlotEnvironment(params, points, clustersSpectral, M, inspectionPoints, obstacles, 'Clustered with Spectral Clustering');
 if saveEnv
     %% Write text files
     filename = ['syn_' num2str(nRooms) 'rooms'];

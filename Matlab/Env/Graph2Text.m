@@ -10,6 +10,7 @@ fprintf(fId, 'homeSize: %d\n', params.homeSize);
 fprintf(fId, 'doorSize: %f\n', params.doorSize);
 fprintf(fId, 'connectionRadius: %f\n', params.connectionRadius);
 fprintf(fId, 'sightRadius: %f\n', params.sightRadius);
+fprintf(fId, 'nRooms: %f\n', params.nRooms);
 fclose(fId);
 
 fId = fopen([pathToWrite '_conf'], 'w');

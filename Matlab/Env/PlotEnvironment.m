@@ -16,7 +16,8 @@ nPoints = size(points,1);
 if isempty(clusters)
     clusters = ones(nPoints,1);
 end
-nClusters = length(unique(clusters));
+clusterIdcs = unique(clusters);
+nClusters = length(clusterIdcs);
 plotTitle = [plotTitle, ' (', num2str(nClusters), ' Clusters)'];
 figure; hold all; axis equal
 
@@ -52,7 +53,7 @@ colorOrder = linspecer(nClusters);
 nColors = size(colorOrder,1);
 for k = 1:nClusters
     color = colorOrder(mod(k-1,nColors)+1,:);
-    plot(points(clusters == k,1), points(clusters == k,2), '.', 'Color', color, 'MarkerSize', 15, 'LineWidth', 3)
+    plot(points(clusters == clusterIdcs(k),1), points(clusters == clusterIdcs(k),2), '.', 'Color', color, 'MarkerSize', 15, 'LineWidth', 3)
 end
 
 title(plotTitle)
@@ -66,10 +67,12 @@ if params.inspectInspection
         end
         if exist('hInspec', 'var')
             delete(hInspec)
+            delete(hInspected)
         end
         [~,i] = min(sqrt(sum(([x y]-points).^2,2)));
         pointToCheck = points(i,:);
         pointsInSight = logical(GetPointsInSight(params, pointToCheck, inspectionPoints, obstacles));
         hInspec = plot(inspectionPoints(pointsInSight,1), inspectionPoints(pointsInSight,2), 'oy');
+        hInspected = plot(pointToCheck(1), pointToCheck(2), 'ok', 'LineWidth', 2);
     end
 end
