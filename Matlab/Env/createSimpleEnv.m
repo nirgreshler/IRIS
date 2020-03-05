@@ -22,7 +22,7 @@ params.connectionRadius = connectionRadius;
 params.sightRadius = sightRadius;
 params.doorSize = doorSize;
 params.nRooms = nRooms;
-
+params.maxClusters = 50;
 %% Create points
 inspectionPoints = GetInspectionPoints(homeSize, nInspectionPoints);
 [obstacles, doors] = GetObstacles(homeSize, nRooms, doorSize, envGrid);
@@ -76,10 +76,11 @@ switch clusteringMethod
     case 'spectral'
         clusters = SpectralClustering(params, points, M, params.nRooms);
     case 'inspection'
-        clusters = InspectionClustering(params, points, pointsInSight);
+        params.unifyBlindPoints = true;
+%         params.lapalacianType = 'rw';
+        clusters = InspectionClustering(params, points, pointsInSight, M);
 end
 %% Plot enviroment
-% params.inspectInspection = true;
 PlotEnvironment(params, points, clusters, M, inspectionPoints, obstacles, ['Clustered with ', clusteringMethod]);
 if saveEnv
     %% Write text files

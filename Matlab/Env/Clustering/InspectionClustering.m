@@ -1,4 +1,13 @@
-function clusters = InspectionClustering(params, points, pointsInSight)
+function clusters = InspectionClustering(params, points, pointsInSight, M)
+if isempty(params)
+    params = struct;
+end
+if ~isfield(params, 'unifyBlindPoints')
+    params.unifyBlindPoints = true;
+end
+if ~isfield(params, 'maxClusters')
+    params.maxClusters = 50;
+end
 nPoints = size(points, 1);
 nInspectionPoints = size(pointsInSight,2);
 % Remove points with no inspection from clustering
@@ -13,8 +22,6 @@ for k = 1:nPoints-1
     clc
     fprintf('Calculating jacard distance... %.1f%%\n', 100*(k/(nPoints-1)))
     for j = k+1:nPoints
-        i1 = find(pointsInSight(k,:));
-        i2 = find(pointsInSight(j,:));
         un = sum(pointsInSight(k,:) | pointsInSight(j,:));
         if un == 0
             Ms(k,j) = 0;
@@ -26,39 +33,20 @@ for k = 1:nPoints-1
         end
     end
 end
-D = diag(sum(Ms));
-L = D-Ms;
-[V,eigenMat] = eig(L);
-
-eigenValues = diag(eigenMat);
-eigenValues = eigenValues(abs(eigenValues) > 1e-6);
-dEigens = diff(eigenValues);
-[~, maxIdx] = max(dEigens);
-nClusters = maxIdx+1;
-
-kSmallestEigenvalues = eigenValues(1:nClusters+1);
-kSmallestEigenvectors = V(:,1:nClusters+1);
-
-z = zeros(nPoints, nClusters);
-for ii = 1:nPoints
-    z(ii,:) = 1./kSmallestEigenvalues(2:end).*kSmallestEigenvectors(ii,2:end)';
-end
-[clusters, C] = kmeans(z, nClusters);
-
-% Remove small clusters
-N = histcounts(clusters, nClusters);
-smallClusters = find(N < 0.01*nPoints);
-largeClusters = setxor(1:nClusters, smallClusters);
-for c = 1:length(smallClusters)
-    pointsOfSmallClusters = find(clusters == smallClusters(c));
-    for k = 1:length(pointsOfSmallClusters)
-        [~,idx] = min(sqrt(sum((z(pointsOfSmallClusters(k),:)-C(largeClusters,:)).^2,2)));
-        clusters(pointsOfSmallClusters(k)) = largeClusters(idx);
-    end
-end
+validPoints = points(validPointsIdcs,:);
+clusters = SpectralClustering(params, validPoints, Ms);
+clustersAll(validPointsIdcs) = clusters;
 nClusters = length(unique(clusters));
 
-clustersAll(validPointsIdcs) = clusters;
-clustersAll(invalidPointsIdcs) = nClusters+1;
+if params.unifyBlindPoints
+    clustersAll(invalidPointsIdcs) = nClusters+1;
+else
+    % Cluster the invalid points
+    Mi = M(invalidPointsIdcs, invalidPointsIdcs);
+    invalidPoints = points(invalidPointsIdcs,:);
+    iClusters = SpectralClustering(params, invalidPoints, Mi);
+    iClusters = iClusters+max(unique(clusters));
+    clustersAll(invalidPointsIdcs) = iClusters;
+end
 
 clusters = clustersAll;

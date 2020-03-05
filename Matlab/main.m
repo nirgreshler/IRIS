@@ -32,6 +32,7 @@ method = 0;
 dist = 'sqeuclidean';
 base_name = fullfile(pwd, 'Graphs');
 username = getenv('USERNAME');
+username = strrep(username, '.', '');
 wsl_path = ['/home/' username '/Project/IRIS'];
 search_path = [wsl_path, '/debug/app/search_graph'];
 base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];

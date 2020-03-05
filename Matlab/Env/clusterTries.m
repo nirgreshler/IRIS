@@ -2,70 +2,46 @@ clear
 close all
 clc
 
-env_name = 'syn_9rooms';
+env_name = 'drone_1000';
 addpath(genpath(pwd))
 
 base_name = fullfile(pwd, 'Graphs');
 
 [conf, vertex, edges] = read_graph(fullfile(base_name, env_name));
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
+nInspectionPoints = max(reshape(vertex(:,2:end),1,[]))+1;
 M = Edges2M(edges(:,[1 2 7]));
-points = conf(:,2:3);
+points = conf(:,2:end);
 nPoints = size(points,1);
-pointsInSight = GetPointsInSight(params, points, inspectionPoints, obstacles);
-% Remove points with no inspection from clustering
-invalidPointsIdcs = find(sum(pointsInSight,2) < size(inspectionPoints,1)*0.01);
-validPointsIdcs = setxor(1:nPoints, invalidPointsIdcs);
-nPoints = length(validPointsIdcs);
-pointsInSight = pointsInSight(validPointsIdcs,:);
-
-Ms = zeros(nPoints);
-for k = 1:nPoints-1
-    clc
-    fprintf('Calculating jacard distance... %.1f%%\n', 100*(k/(nPoints-1)))
-    for j = k+1:nPoints
-        i1 = find(pointsInSight(k,:));
-        i2 = find(pointsInSight(j,:));
-        un = sum(pointsInSight(k,:) | pointsInSight(j,:));
-        if un == 0
-            Ms(k,j) = 0;
-            Ms(j,k) = 0;
-        else
-            in = sum(pointsInSight(k,:) & pointsInSight(j,:));
-            Ms(k,j) = in/un;
-            Ms(j,k) = Ms(k,j);
-        end
-    end
+pointsInSight = zeros(nPoints, nInspectionPoints);
+sights = vertex(:,4:end);
+for k = 1:nPoints
+    idcs = find(~isnan(sights(k,:)));
+    pointsInSight(k, sights(k,idcs)+1) = 1;
 end
-D = diag(sum(Ms));
-L = D-Ms;
-[V,eigenMat] = eig(L);
+params.normalizeM = false;
+params.minClusters = 2;
+params.maxClusters = 10;
 
-eigenValues = diag(eigenMat);
-eigenValues = eigenValues(abs(eigenValues) > 1e-6);
-dEigens = diff(eigenValues);
-[~, maxIdx] = max(dEigens);
-nClusters = maxIdx;
+params.laplacianType = 'sym';
+clusters = SpectralClustering(params, points,M);
+% clusters = InspectionClustering([], points, pointsInSight, M);
 
-kSmallestEigenvalues = eigenValues(1:nClusters+1);
-kSmallestEigenvectors = V(:,1:nClusters+1);
-
-z = zeros(nPoints, nClusters);
-for ii = 1:nPoints
-    z(ii,:) = 1./kSmallestEigenvalues(2:end).*kSmallestEigenvectors(ii,2:end)';
+clusterIdcs = unique(clusters);
+nClusters = length(clusterIdcs);
+% Examine inspection in each cluster
+cInspectionPoints = cell(nClusters,1);
+for k = 1:nClusters
+    pointsInCluster = clusters == clusterIdcs(k);
+%     [r,c] = find(pointsInSight(pointsInCluster,:));
+%     cInspectionPoints{k} = c;
+    cInspectionPoints{k} = sum(pointsInSight(pointsInCluster,:));
 end
-clusters = kmeans(z, nClusters);
-% clusters = kmeans(kSmallestEigenvectors, nClusters);
+colorOrder = linspecer(nClusters);
+figure; hold all
+set(gca, 'colorOrder', colorOrder)
+for k = 1:nClusters
+    plot(1:nInspectionPoints, cInspectionPoints{k}, '.-')
+%     histogram(cInspectionPoints{k}, nInspectionPoints)
+end
 
-% % Remove small clusters
-% [N, edges] = histcounts(clusters, nClusters);
-% smallClusters = find(N < 0.05*nPoints);
-% largeClusters = setxor(1:nClusters,smallClusters);
-% [~, pointsOfSmallClusters] = intersect(clusters, smallClusters);
-% clusters(pointsOfSmallClusters) = nClusters+1;
-
-clustersAll(validPointsIdcs) = clusters;
-clustersAll(invalidPointsIdcs) = nClusters+1;
-params.inspectInspection = true;
-
-PlotEnvironment(params, points, clustersAll, M, inspectionPoints, obstacles, 'Clustered by Inspection');
