@@ -55,7 +55,9 @@ colorOrder = linspecer(nClusters);
 nColors = size(colorOrder,1);
 for k = 1:nClusters
     color = colorOrder(mod(k-1,nColors)+1,:);
-    graphHandles = [graphHandles plot(points(clusters == clusterIdcs(k),1), points(clusters == clusterIdcs(k),2), '.', 'Color', color, 'MarkerSize', 15, 'LineWidth', 3)];
+    pH = plot(points(clusters == clusterIdcs(k),1), points(clusters == clusterIdcs(k),2), '.', 'Color', color, 'MarkerSize', 15, 'LineWidth', 3);
+    pH.ButtonDownFcn = {@showInsPoints, points};
+    graphHandles = [graphHandles pH];
 end
 
 f.ButtonDownFcn = {@(f, ~, h) toggleGraph(f, graphHandles), graphHandles};
@@ -87,6 +89,20 @@ end
         else
             set(h, 'Visible', 'on');
         end
+    end
+
+    function showInsPoints(f, e ,ps)
+        xx = e.IntersectionPoint(1);
+        yy = e.IntersectionPoint(2);
+        [~,ii] = min(sqrt(sum(([xx yy]-ps).^2,2)));
+        if exist('hInspec', 'var')
+            delete(hInspec)
+            delete(hInspected)
+        end
+        pointToCheck = ps(ii,:);
+        pointsInSight = logical(GetPointsInSight(params, pointToCheck, inspectionPoints, obstacles));
+        hInspec = plot(inspectionPoints(pointsInSight,1), inspectionPoints(pointsInSight,2), 'oy');
+        hInspected = plot(pointToCheck(1), pointToCheck(2), 'ok', 'LineWidth', 2);
     end
 
 end
