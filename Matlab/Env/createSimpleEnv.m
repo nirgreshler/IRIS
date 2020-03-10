@@ -14,7 +14,7 @@ sightRadius = roomSize*sqrt(2)/2;
 samplingMethod = 'RRT'; % 'Uniform' / 'Sobol' / 'RRT'
 fol = fileparts(mfilename('fullpath'));
 rng('shuffle')
-clusteringMethod = 'inspection';
+clusteringMethod = 'spectral';
 outputFolder = fullfile(fol, '..', 'Graphs', filesep);
 saveEnv = true;
 params.homeSize = homeSize;

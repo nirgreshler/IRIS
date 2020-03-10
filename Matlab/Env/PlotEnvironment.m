@@ -60,6 +60,10 @@ for k = 1:nClusters
     graphHandles = [graphHandles pH];
 end
 
+for i = 1:nPoints
+    text(points(i, 1), points(i, 2), num2str(i-1));
+end
+
 f.ButtonDownFcn = {@(f, ~, h) toggleGraph(f, graphHandles), graphHandles};
 
 title(plotTitle)

@@ -38,6 +38,9 @@ username = strrep(username, '.', '');
 if strcmp(username, 'Gal')
     username = 'galgreshler';
 end
+if strcmp(username, 'Nir')
+    username = 'nirgreshler';
+end
 wsl_path = ['/home/' username '/Project/IRIS'];
 search_path = [wsl_path, '/debug/app/search_graph'];
 base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];
@@ -79,17 +82,35 @@ for i = step:step:size(conf, 1)
 %     PlotEnvironment(params, rrt_conf(:,2:3), clusters, M, inspectionPoints, obstacles, 'Spectral');
 %     title(num2str(i));
     
-    [bridge_conf, bridge_vertex, bridge_edges] = get_bridge_graph(rrt_conf, rrt_vertex, rrt_edges, clusters, obstacles, params, true);
+    [bridge_conf, bridge_vertex, bridge_edges, vert_idx_mapping, vedges_mapping] = get_bridge_graph(rrt_conf, rrt_vertex, rrt_edges, clusters, obstacles, params, true);
     
 %     M = Edges2M(bridge_edges(:, [1:2, 7]));
 %     clusters = ones(size(bridge_conf, 1), 1);
 %     PlotEnvironment(params, bridge_conf(:,2:3), clusters, M, inspectionPoints, obstacles, 'Spectral');
+    
+    virtual_edges = cell2mat(vedges_mapping(:, 1));
 
 %     scatter(bridge_conf(:, 2), bridge_conf(:, 3), 'ok', 'Linewidth', 1);
 %     for k = 1:size(bridge_edges, 1)
 %         p1 = bridge_conf(bridge_edges(k, 1)+1, 2:3);
 %         p2 = bridge_conf(bridge_edges(k, 2)+1, 2:3);
-%         plot([p1(1) p2(1)], [p1(2) p2(2)], '--r', 'LineWidth', 2)
+%         vEdgeIdx = find(virtual_edges == k);
+%         if isempty(vEdgeIdx)
+%             plot([p1(1) p2(1)], [p1(2) p2(2)], '--r', 'LineWidth', 2);
+%         else
+%             % a virtual edge
+%             plot([p1(1) p2(1)], [p1(2) p2(2)], '-.r', 'LineWidth', 2);
+%             % show the real path
+%             vEdgeStartRealIdx = vert_idx_mapping(bridge_edges(k, 1)+1);
+%             vEdgeEndRealIdx = vert_idx_mapping(bridge_edges(k, 2)+1);
+%             vertInRealPath = vedges_mapping{vEdgeIdx, 2}';
+%             edgesInRealPath = get_edges_per_vertex(rrt_edges, [vEdgeStartRealIdx, vEdgeEndRealIdx, vertInRealPath]);
+%             for kk = 1:size(edgesInRealPath, 1)
+%                 p1 = rrt_conf(edgesInRealPath(kk, 1)+1, 2:3);
+%                 p2 = rrt_conf(edgesInRealPath(kk, 2)+1, 2:3);
+%                 plot([p1(1) p2(1)], [p1(2) p2(2)], '-.b', 'LineWidth', 2);
+%             end
+%         end
 %     end
 
     write_graph(fullfile(base_name, [env_name '_bridges'],['bridge_' num2str(i)]), bridge_conf, bridge_vertex, unique(bridge_edges, 'rows'));
@@ -104,7 +125,23 @@ scatter(bridge_conf(:, 2), bridge_conf(:, 3), 'ok', 'Linewidth', 1);
 for k = 1:size(bridge_edges, 1)
     p1 = bridge_conf(bridge_edges(k, 1)+1, 2:3);
     p2 = bridge_conf(bridge_edges(k, 2)+1, 2:3);
-    plot([p1(1) p2(1)], [p1(2) p2(2)], '--r', 'LineWidth', 2)
+    vEdgeIdx = find(virtual_edges == k);
+    if isempty(vEdgeIdx)
+        plot([p1(1) p2(1)], [p1(2) p2(2)], '--r', 'LineWidth', 2);
+    else
+        % a virtual edge
+        plot([p1(1) p2(1)], [p1(2) p2(2)], '-.r', 'LineWidth', 2);
+        % show the real path
+        vEdgeStartRealIdx = vert_idx_mapping(bridge_edges(k, 1)+1);
+        vEdgeEndRealIdx = vert_idx_mapping(bridge_edges(k, 2)+1);
+        vertInRealPath = vedges_mapping{vEdgeIdx, 2}';
+        edgesInRealPath = get_edges_per_vertex(rrt_edges, [vEdgeStartRealIdx, vEdgeEndRealIdx, vertInRealPath]);
+        for kk = 1:size(edgesInRealPath, 1)
+            p1 = rrt_conf(edgesInRealPath(kk, 1)+1, 2:3);
+            p2 = rrt_conf(edgesInRealPath(kk, 2)+1, 2:3);
+            plot([p1(1) p2(1)], [p1(2) p2(2)], '-.b', 'LineWidth', 2);
+        end
+    end
 end
 
 % plotGraph(bridge_conf, bridge_vertex, bridge_edges);
@@ -201,6 +238,10 @@ if exist(res_file, 'file') && exist(res_file_bridges, 'file')
     end
     
     % plot bridges path
+    % TODO currently taking the last rrt iteration
+    [bridge_conf, bridge_vertex, bridge_edges, vert_idx_mapping, vedges_mapping] = get_bridge_graph(rrt_conf, rrt_vertex, rrt_edges, clusters, obstacles, params, true);
+    virtual_edges = cell2mat(vedges_mapping(:, 1));
+    
     vertInBridgePath = bridge_vertex(pathIdxBridges, 1);
 
     for i = 1:length(pathIdxBridges) - 1

@@ -1,4 +1,4 @@
-function [bridge_conf, bridge_vertex, bridge_edges, vedges_mapping] = get_bridge_graph(conf, vertex, edges, clusters, obstacles, params, addOnlyVirtualEdges)
+function [bridge_conf, bridge_vertex, bridge_edges, vert_idx_mapping, vedges_mapping] = get_bridge_graph(conf, vertex, edges, clusters, obstacles, params, addOnlyVirtualEdges)
 
 if nargin == 6
     addOnlyVirtualEdges = false;
@@ -8,6 +8,7 @@ numClusters = length(unique(clusters));
 
 bridgeVert = [];
 bridgeEdge = [];
+vedges_mapping = cell(0, 2); % maps a virtual edge to a list of vertex of the real path
 
 for iClus = 1:numClusters
     vertInClus = vertex(clusters == iClus, 1);
@@ -63,7 +64,7 @@ for iClus = 1:numClusters
             if ~isempty(pathFound)
                 % get the coverage of all points in the path
                 innerPath = pathFound(2:end-1, :);
-                innerPathIdcsInOriginalGraph = vertInClus(innerPath(:,1))+1;
+                innerPathIdcsInOriginalGraph = vertInClus(innerPath(:,1));
                 
                 if isempty(innerPath)
                     % the two bridge nodes are already connected in the
@@ -84,6 +85,8 @@ for iClus = 1:numClusters
                         
                         % Add the virtual edge to the bridge graph
                         bridge_edges = [bridge_edges; newVirtualEdge];
+                        vedges_mapping{size(vedges_mapping,1) + 1, 1} = size(bridge_edges, 1);
+                        vedges_mapping{size(vedges_mapping,1), 2} = innerPathIdcsInOriginalGraph;
                     else
                         % Add a virutal vertex
                         newVertexIdx = newVertexIdx + 1;
@@ -119,11 +122,11 @@ disp(['Added ' num2str(virtual_edges_added) ' edges within clusters']);
 
 % need to fix indices
 nNodes = size(bridge_vertex(:, 1), 1);
-idx_in_edges = bridge_vertex(:, 1);
+vert_idx_mapping = bridge_vertex(:, 1);
 bridge_vertex(:, 1) = 0:nNodes-1;
 bridge_conf(:, 1) = 0:nNodes-1;
 edgesIdx = bridge_edges(:, 1:2);
 for i = 0:nNodes-1
-    edgesIdx(edgesIdx == idx_in_edges(i+1)) = i;
+    edgesIdx(edgesIdx == vert_idx_mapping(i+1)) = i;
 end
 bridge_edges(:, 1:2) = edgesIdx;
