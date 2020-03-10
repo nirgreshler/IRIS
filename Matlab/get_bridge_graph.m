@@ -63,6 +63,7 @@ for iClus = 1:numClusters
             if ~isempty(pathFound)
                 % get the coverage of all points in the path
                 innerPath = pathFound(2:end-1, :);
+                innerPathIdcsInOriginalGraph = vertInClus(innerPath(:,1))+1;
                 
                 if isempty(innerPath)
                     % the two bridge nodes are already connected in the

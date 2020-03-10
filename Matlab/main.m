@@ -35,6 +35,9 @@ dist = 'sqeuclidean';
 base_name = fullfile(pwd, 'Graphs');
 username = getenv('USERNAME');
 username = strrep(username, '.', '');
+if strcmp(username, 'Gal')
+    username = 'galgreshler';
+end
 wsl_path = ['/home/' username '/Project/IRIS'];
 search_path = [wsl_path, '/debug/app/search_graph'];
 base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];
@@ -190,7 +193,7 @@ if exist(res_file, 'file') && exist(res_file_bridges, 'file')
     outsplt = strsplit(strtrim(out), ' ');
     pathIdxBridges = str2double(outsplt(2:end)) + 1;
     
-    PlotEnvironment(params, rrt_conf(:,2:3), clusters, M, inspectionPoints, obstacles, 'Spectral');
+    PlotEnvironment(params, rrt_conf(:,2:3), clusters, M, inspectionPoints, obstacles, 'Paths found by IRIS');
     % Show the original path
     for i = 1:length(pathIdx) - 1
         plot([conf(pathIdx(i), 2), conf(pathIdx(i+1), 2)], [conf(pathIdx(i), 3), conf(pathIdx(i+1), 3)], ...
