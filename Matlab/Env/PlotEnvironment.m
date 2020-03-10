@@ -1,5 +1,7 @@
 function PlotEnvironment(params, points, clusters, M, inspectionPoints, obstacles, plotTitle)
 
+graphHandles = [];
+
 homeSize = params.homeSize;
 if ~isfield(params, 'plotEdges')
     params.plotEdges = false;
@@ -19,7 +21,7 @@ end
 clusterIdcs = unique(clusters);
 nClusters = length(clusterIdcs);
 plotTitle = [plotTitle, ' (', num2str(nClusters), ' Clusters)'];
-figure; hold all; axis equal
+f = figure; hold all; axis equal
 
 % outside walls
 plot([0 homeSize], [0 0], '-k', 'LineWidth', 1)
@@ -42,7 +44,7 @@ if params.plotEdges
             if M(k,m) > 0
                 p1 = points(k,:);
                 p2 = points(m,:);
-                plot([p1(1) p2(1)], [p1(2) p2(2)], '--k')
+                graphHandles = [graphHandles plot([p1(1) p2(1)], [p1(2) p2(2)], '-k')];
             end
         end
     end
@@ -53,8 +55,10 @@ colorOrder = linspecer(nClusters);
 nColors = size(colorOrder,1);
 for k = 1:nClusters
     color = colorOrder(mod(k-1,nColors)+1,:);
-    plot(points(clusters == clusterIdcs(k),1), points(clusters == clusterIdcs(k),2), '.', 'Color', color, 'MarkerSize', 15, 'LineWidth', 3)
+    graphHandles = [graphHandles plot(points(clusters == clusterIdcs(k),1), points(clusters == clusterIdcs(k),2), '.', 'Color', color, 'MarkerSize', 15, 'LineWidth', 3)];
 end
+
+f.ButtonDownFcn = {@(f, ~, h) toggleGraph(f, graphHandles), graphHandles};
 
 title(plotTitle)
 
@@ -75,4 +79,14 @@ if params.inspectInspection
         hInspec = plot(inspectionPoints(pointsInSight,1), inspectionPoints(pointsInSight,2), 'oy');
         hInspected = plot(pointToCheck(1), pointToCheck(2), 'ok', 'LineWidth', 2);
     end
+end
+
+    function toggleGraph(f, h)
+        if strcmp(h(1).Visible, 'on')
+            set(h, 'Visible', 'off');
+        else
+            set(h, 'Visible', 'on');
+        end
+    end
+
 end
