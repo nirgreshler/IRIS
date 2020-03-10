@@ -43,8 +43,10 @@ class GraphSearch {
     using ClosedSet = std::set<NodePtr, CoverageCmp>;
 public:
     GraphSearch(Inspection::GPtr graph);
+    void ClearGraph(Inspection::GPtr graph);
     
     SizeType ExpandVirtualGraph(SizeType new_size, bool lazy_computation=true);
+    SizeType ExpandBridgeGraph(SizeType new_size, bool lazy_computation=true);
     std::vector<Idx> SearchVirtualGraphCompleteLazy(const RealNum p=1.0, const RealNum eps=0.0);
     std::vector<Idx> SearchVirtualGraph(const RealNum p=1.0, const RealNum eps=0.0);
     SizeType VirtualGraphCoverageSize() const;

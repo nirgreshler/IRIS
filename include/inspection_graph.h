@@ -47,6 +47,8 @@ namespace Inspection {
 		Graph();
 		~Graph();
 
+		void Reset();
+
 		void AddVertex(const Idx i);
 		void AddVertex(VPtr vertex);
 		void AddEdge(const Idx s, const Idx t);
@@ -67,7 +69,7 @@ namespace Inspection {
 		void ReadFromFiles(const String file_name, const bool read_configs=true, const Idx dof=0);
 
 	private:
-		void Reset();
+		//void Reset();
 		VPtr null_vertex_{nullptr};
 		EPtr null_edge_{nullptr};
 		std::vector<VPtr> vertices_;
