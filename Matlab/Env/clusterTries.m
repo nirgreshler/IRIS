@@ -24,8 +24,8 @@ for k = 1:nPoints
     pointsInSight(k, idcsOfInspectionPoints) = 1;
 end
 params.normalizeM = false;
-params.minClusters = 5;
-params.maxClusters = 20;
+params.minClusters = 1;
+params.maxClusters = 100;
 
 params.laplacianType = 'normal';
 clusters = SpectralClustering(params, points,M);
@@ -63,7 +63,7 @@ for k = 1:nClusters
     cInspectionPoints{k} = sum(newPointsInSight(pointsInCluster,:));
 end
 colorOrder = linspecer(nClusters);
-%%
+%% Plot histogram of inspection
 figure; hold all
 set(gca, 'colorOrder', colorOrder)
 for k = 1:nClusters
@@ -71,5 +71,18 @@ for k = 1:nClusters
     plot(1:nInspectionPoints, cInspectionPoints{k}, '.-', 'DisplayName', sprintf('Cluster #%d (%d points)', k, sum(pointsInCluster)))
 %     histogram(cInspectionPoints{k}, nInspectionPoints)
 end
+title('Coverage per Cluster')
 legend show
 title([num2str(nClusters), ' Clusters'])
+%% Plot points
+figure; hold all
+set(gca, 'colorOrder', colorOrder)
+for k = 1:nClusters
+    pointsInCluster = clusters == clusterIdcs(k);
+    plot3(conf(pointsInCluster,2), conf(pointsInCluster,3), conf(pointsInCluster,4), '.', 'DisplayName', sprintf('Cluster #%d (%d points)', k, sum(pointsInCluster)))
+end
+xlabel('x'); ylabel('x'); zlabel('z');
+title('Configuration Space')
+legend show
+title([num2str(nClusters), ' Clusters'])
+grid on
