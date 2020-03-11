@@ -35,6 +35,9 @@ if nargin < 4
     [~, maxIdx] = max(dEigens(max(params.minClusters-1,1):min(length(dEigens),params.maxClusters)));
     nClusters = maxIdx+max(params.minClusters-1,1);
     nClusters = min(nClusters, size(points,1)/2);
+    maxVal = max(dEigens(max(params.minClusters-1,1):params.maxClusters));
+    maxIdx = find(dEigens == maxVal);
+    nClusters = maxIdx+1;
 end
 kSmallestEigenvalues = eigenValues(1:nClusters+1);
 kSmallestEigenvectors = V(:,1:nClusters+1);
