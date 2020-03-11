@@ -120,6 +120,12 @@ for iClus = 1:numClusters
 end
 disp(['Added ' num2str(virtual_edges_added) ' edges within clusters']);
 
+[bridge_edges, uIdx] = unique(bridge_edges, 'rows', 'stable');
+for ii = 1:size(vedges_mapping, 1)
+    newIdx = find(vedges_mapping{ii, 1} == uIdx);
+    vedges_mapping{ii, 1} = newIdx;
+end
+
 % need to fix indices
 nNodes = size(bridge_vertex(:, 1), 1);
 vert_idx_mapping = bridge_vertex(:, 1);

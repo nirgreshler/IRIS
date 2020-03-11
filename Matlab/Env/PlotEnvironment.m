@@ -9,6 +9,9 @@ end
 if ~isfield(params, 'inspectInspection')
     params.inspectInspection = false;
 end
+if ~isfield(params, 'showText')
+    params.showText = false;
+end
 
 if ~exist('plotTitle', 'var') || isempty(plotTitle)
     plotTitle = 'Environment';
@@ -60,8 +63,10 @@ for k = 1:nClusters
     graphHandles = [graphHandles pH];
 end
 
-for i = 1:nPoints
-    text(points(i, 1), points(i, 2), num2str(i-1));
+if params.showText
+    for i = 1:nPoints
+        graphHandles = [graphHandles text(points(i, 1), points(i, 2), num2str(i-1))];
+    end
 end
 
 f.ButtonDownFcn = {@(f, ~, h) toggleGraph(f, graphHandles), graphHandles};

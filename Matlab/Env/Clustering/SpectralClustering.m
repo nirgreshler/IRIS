@@ -29,10 +29,12 @@ switch params.laplacianType
 end
 [V,eigenMat] = eig(L);
 eigenValues = diag(eigenMat);
+firstValidEig = find(abs(eigenValues) > 1e-12, 1);
 if nargin < 4
     dEigens = diff(eigenValues);
-    [~, maxIdx] = max(dEigens(max(params.minClusters-1,1):params.maxClusters));
-    nClusters = maxIdx+1;
+    [~, maxIdx] = max(dEigens(max(params.minClusters-1,1):min(length(dEigens),params.maxClusters)));
+    nClusters = maxIdx+max(params.minClusters-1,1);
+    nClusters = min(nClusters, size(points,1)/2);
 end
 kSmallestEigenvalues = eigenValues(1:nClusters+1);
 kSmallestEigenvectors = V(:,1:nClusters+1);

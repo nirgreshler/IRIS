@@ -7,10 +7,10 @@ nRooms = nSqrRooms^2;
 roomSize = homeSize/nSqrRooms;
 envGrid = 0.01;
 doorSize = 0.25;
-nPoints = 200;
+nPoints = 300;
 nInspectionPoints = 400;
 connectionRadius = 0.8;
-sightRadius = roomSize*sqrt(2)/2;
+sightRadius = roomSize*sqrt(2);
 samplingMethod = 'RRT'; % 'Uniform' / 'Sobol' / 'RRT'
 fol = fileparts(mfilename('fullpath'));
 rng('shuffle')
@@ -69,12 +69,14 @@ M = BuildAdjcancyMatrix(points, obstacles, connectionRadius);
 %% Get inspection point for each point
 [pointsInSight, timeVisVec] = GetPointsInSight(params, points, inspectionPoints, obstacles);
 %% Clustering
-clusters = InspectionClustering(params, points, pointsInSight);
+params.minClusters = 1;
+params.maxClusters = 10;
+% clusters = InspectionClustering(params, points, pointsInSight);
 switch clusteringMethod
     case 'kmeans'
         clusters = KMeansClustering(params, points, params.nRooms);
     case 'spectral'
-        clusters = SpectralClustering(params, points, M, params.nRooms);
+        clusters = SpectralClustering(params, points, M);
     case 'inspection'
         params.unifyBlindPoints = true;
 %         params.lapalacianType = 'rw';
