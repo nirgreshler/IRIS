@@ -1,4 +1,5 @@
 function [clusters, C] = SpectralClustering(params, points, M, nClusters)
+rng(1);
 if isempty(params)
     params = struct;
 end

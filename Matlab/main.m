@@ -2,8 +2,10 @@ close all
 clc
 clear
 
+rng(1);
+
 % env_name = 'planar_1000';
-num_rooms = 9;
+num_rooms = 4;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
 
 K_MEANS_START = 2;
@@ -33,6 +35,12 @@ dist = 'sqeuclidean';
 base_name = fullfile(pwd, 'Graphs');
 username = getenv('USERNAME');
 username = strrep(username, '.', '');
+if strcmp(username, 'Gal')
+    username = 'galgreshler';
+end
+if strcmp(username, 'Nir')
+    username = 'nirgreshler';
+end
 wsl_path = ['/home/' username '/Project/IRIS'];
 search_path = [wsl_path, '/debug/app/search_graph'];
 base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];
@@ -53,96 +61,91 @@ switch clusteringMethod
 end
 
 % build the bridge graph
-[bridge_conf, bridge_vertex, bridge_edges] = get_bridge_graph(conf, vertex, edges, clusters);
+% [bridge_conf, bridge_vertex, bridge_edges] = get_bridge_graph(conf, vertex, edges, clusters, obstacles, params);
 
 % plotGraph(bridge_conf, bridge_vertex, bridge_edges);
 % title('Bridge graph BEFORE inner edges');
 
-% add the inner edges within a cluster
-virtual_edges_added = 0;
-virtual_nodes_added = 0;
-numClusters = length(unique(clusters));
-for iClus = 1:numClusters
-    vertInClus = vertex(clusters == iClus, 1); % All vertices ID in this cluster 
-    vertInClusNames = strsplit(num2str(vertInClus'));
-    vertInClusInBridge = intersect(vertInClus, bridge_vertex(:, 1)); % All bridge-vertices ID in this cluster
-    vertInClusInBridgeNames = strsplit(num2str(vertInClusInBridge'));
+step = 5;
+% save bridge graphs after each RRT iteration(s)
+if ~exist(fullfile(base_name, [env_name '_bridges']), 'dir')
+    mkdir(fullfile(base_name, [env_name '_bridges']));
+end
+params.plotEdges = true;
+for i = step:step:size(conf, 1)
+    rrt_conf = conf(1:i, :);
+    rrt_vertex = vertex(1:i, :);
+    rrt_edges = get_edges_per_vertex(edges, rrt_vertex(:, 1));
     
-    % We want to find the shortest path between all bridge nodes to all
-    % bridge nodes
-    points = conf(vertInClus + 1, 2:3);
-    Mc = BuildAdjcancyMatrix(points, obstacles, params.connectionRadius); % TODO take from original M
-%     g = graph(Mc, vertInClusNames);
-%     d = distances(g, vertInClusInBridgeNames, vertInClusInBridgeNames, 'Method' ,'positive');
-%     [TR, d] = shortestpathtree(g ,vertInClusInBridgeNames, vertInClusInBridgeNames, 'Method' ,'positive');
-%     d = roundn(d, -4);
-%     assert(issymmetric(d));
+    M = Edges2M(rrt_edges(:, [1:2,7]));
+    clusters = SpectralClustering(params, rrt_conf(:,2:3), M, num_rooms);
+%     PlotEnvironment(params, rrt_conf(:,2:3), clusters, M, inspectionPoints, obstacles, 'Spectral');
+%     title(num2str(i));
     
-    newVertexIdx = size(vertex, 1);
+    [bridge_conf, bridge_vertex, bridge_edges, vert_idx_mapping, vedges_mapping] = get_bridge_graph(rrt_conf, rrt_vertex, rrt_edges, clusters, obstacles, params, true);
+    
+%     M = Edges2M(bridge_edges(:, [1:2, 7]));
+%     clusters = ones(size(bridge_conf, 1), 1);
+%     PlotEnvironment(params, bridge_conf(:,2:3), clusters, M, inspectionPoints, obstacles, 'Spectral');
+    
+    virtual_edges = cell2mat(vedges_mapping(:, 1));
 
-    for i = 1:length(vertInClusInBridge)-1
-        for j = i+1:length(vertInClusInBridge)
-            startIdx = find(all(points == conf(vertInClusInBridge(i) + 1, 2:3),2));
-            goalIdx = find(all(points == conf(vertInClusInBridge(j) + 1, 2:3),2));
-            [pathFound, cost] = AStar(points, startIdx, goalIdx, Mc);
-            if ~isempty(pathFound)
-                % get the coverage of all points in the path
-                innerPath = pathFound(2:end-1, :);
-                
-                if isempty(innerPath)
-                    % the two bridge nodes are already connected in the
-                    % original graph, add it to the bridge graph
-                    edgeIdx = find(edges(:, 1) == vertInClusInBridge(i) & edges(:, 2) == vertInClusInBridge(j));
-                    assert(~isempty(edgeIdx));
-                    bridge_edges = [bridge_edges; edges(edgeIdx, :)];
-                else
-                    % get the coverage of inner path
-                    cov = unique(vertex(innerPath(:, 1) + 1, 4:end));
-                    innerPathCov = cov(~isnan(cov));
-                    innerPathCov = reshape(innerPathCov, 1, length(innerPathCov));
-                    
-                    if isempty(innerPathCov)
-                        % inner path has no coverage, just add virtual edge
-                        newVirtualEdge = [vertInClusInBridge(i), vertInClusInBridge(j), 1, 1, 0, 0, cost]; % TODO 1 1 0 0
-                        virtual_edges_added = virtual_edges_added + 2;
-                        
-                        % Add the virtual edge to the bridge graph
-                        bridge_edges = [bridge_edges; newVirtualEdge];
-                    else
-                        % Add a virutal vertex
-                        newVertexIdx = newVertexIdx + 1;
-                        newVirutalVertex = [newVertexIdx, 0, 0, innerPathCov];
-                        newVirutalConf = [newVertexIdx, innerPath(1, 2:3)]; % the conf. of first node in inner path
-                        
-                        padLen = size(bridge_vertex, 2) - length(newVirutalVertex);
-                        
-                        if padLen > 0
-                            newVirutalVertex = [newVirutalVertex, repmat(nan, 1, padLen)];
-                        else
-                            padLen = -padLen;
-                            bridge_vertex = [bridge_vertex, repmat(nan, size(bridge_vertex, 1), padLen)];
-                        end
-                        
-                        % Add two virtual edges
-                        newVirtualEdge1 = [vertInClusInBridge(i), newVertexIdx, 1, 1, 0, 0, cost/2]; % TODO 1 1 0 0
-                        newVirtualEdge2 = [newVertexIdx, vertInClusInBridge(j), 1, 1, 0, 0, cost/2]; % TODO 1 1 0 0
-                        
-                        virtual_edges_added = virtual_edges_added + 2;
-                        
-                        % Add the virtual nodes and edges to the bridge graph
-                        bridge_edges = [bridge_edges; newVirtualEdge1; newVirtualEdge2];
-                        bridge_vertex = [bridge_vertex; newVirutalVertex];
-                        bridge_conf = [bridge_conf; newVirutalConf];
-                    end
-                end               
-            end
+%     scatter(bridge_conf(:, 2), bridge_conf(:, 3), 'ok', 'Linewidth', 1);
+%     for k = 1:size(bridge_edges, 1)
+%         p1 = bridge_conf(bridge_edges(k, 1)+1, 2:3);
+%         p2 = bridge_conf(bridge_edges(k, 2)+1, 2:3);
+%         vEdgeIdx = find(virtual_edges == k);
+%         if isempty(vEdgeIdx)
+%             plot([p1(1) p2(1)], [p1(2) p2(2)], '--r', 'LineWidth', 2);
+%         else
+%             % a virtual edge
+%             plot([p1(1) p2(1)], [p1(2) p2(2)], '-.r', 'LineWidth', 2);
+%             % show the real path
+%             vEdgeStartRealIdx = vert_idx_mapping(bridge_edges(k, 1)+1);
+%             vEdgeEndRealIdx = vert_idx_mapping(bridge_edges(k, 2)+1);
+%             vertInRealPath = vedges_mapping{vEdgeIdx, 2}';
+%             edgesInRealPath = get_edges_per_vertex(rrt_edges, [vEdgeStartRealIdx, vEdgeEndRealIdx, vertInRealPath]);
+%             for kk = 1:size(edgesInRealPath, 1)
+%                 p1 = rrt_conf(edgesInRealPath(kk, 1)+1, 2:3);
+%                 p2 = rrt_conf(edgesInRealPath(kk, 2)+1, 2:3);
+%                 plot([p1(1) p2(1)], [p1(2) p2(2)], '-.b', 'LineWidth', 2);
+%             end
+%         end
+%     end
+
+    write_graph(fullfile(base_name, [env_name '_bridges'],['bridge_' num2str(i)]), bridge_conf, bridge_vertex, unique(bridge_edges, 'rows'));
+end
+
+% Show the last bridge graph
+M = Edges2M(rrt_edges(:, [1:2,7]));
+clusters = SpectralClustering(params, rrt_conf(:,2:3), M, num_rooms);
+PlotEnvironment(params, rrt_conf(:,2:3), clusters, M, inspectionPoints, obstacles, 'Spectral');
+title(num2str(i));
+scatter(bridge_conf(:, 2), bridge_conf(:, 3), 'ok', 'Linewidth', 1);
+for k = 1:size(bridge_edges, 1)
+    p1 = bridge_conf(bridge_edges(k, 1)+1, 2:3);
+    p2 = bridge_conf(bridge_edges(k, 2)+1, 2:3);
+    vEdgeIdx = find(virtual_edges == k);
+    if isempty(vEdgeIdx)
+        plot([p1(1) p2(1)], [p1(2) p2(2)], '--r', 'LineWidth', 2);
+    else
+        % a virtual edge
+        plot([p1(1) p2(1)], [p1(2) p2(2)], '-.r', 'LineWidth', 2);
+        % show the real path
+        vEdgeStartRealIdx = vert_idx_mapping(bridge_edges(k, 1)+1);
+        vEdgeEndRealIdx = vert_idx_mapping(bridge_edges(k, 2)+1);
+        vertInRealPath = vedges_mapping{vEdgeIdx, 2}';
+        edgesInRealPath = get_edges_per_vertex(rrt_edges, [vEdgeStartRealIdx, vEdgeEndRealIdx, vertInRealPath]);
+        for kk = 1:size(edgesInRealPath, 1)
+            p1 = rrt_conf(edgesInRealPath(kk, 1)+1, 2:3);
+            p2 = rrt_conf(edgesInRealPath(kk, 2)+1, 2:3);
+            plot([p1(1) p2(1)], [p1(2) p2(2)], '-.b', 'LineWidth', 2);
         end
     end
 end
-disp(['Added ' num2str(virtual_edges_added) ' edges within clusters']);
 
-plotGraph(bridge_conf, bridge_vertex, bridge_edges);
-title('Bridge graph AFTER inner edges');
+% plotGraph(bridge_conf, bridge_vertex, bridge_edges);
+% title('Bridge graph AFTER inner edges');
 
 % % show the bridge graph
 % PlotEnvironment(params, conf(:,2:3), clusters, M, inspectionPoints, obstacles, 'Spectral');
@@ -154,27 +157,16 @@ title('Bridge graph AFTER inner edges');
 %     plot([p1(1) p2(1)], [p1(2) p2(2)], '--k')
 % end
 
-edges_ = get_edges_per_vertex(bridge_edges, bridge_vertex(1:23, 1));
-PlotEnvironment(params, bridge_conf(1:23,2:3), clusters(1:23), M, inspectionPoints, obstacles, 'Spectral');
-for k = 1:size(edges_, 1)
-    p1 = conf(edges_(k, 1)+1, 2:3);
-    p2 = conf(edges_(k, 2)+1, 2:3);
-    plot([p1(1) p2(1)], [p1(2) p2(2)], '--k')
-end
+% edges_ = get_edges_per_vertex(bridge_edges, bridge_vertex(1:23, 1));
+% PlotEnvironment(params, bridge_conf(1:23,2:3), clusters(1:23), M, inspectionPoints, obstacles, 'Spectral');
+% for k = 1:size(edges_, 1)
+%     p1 = conf(edges_(k, 1)+1, 2:3);
+%     p2 = conf(edges_(k, 2)+1, 2:3);
+%     plot([p1(1) p2(1)], [p1(2) p2(2)], '--k')
+% end
 
-% need to fix indices
-nNodes = size(bridge_vertex(:, 1), 1);
-idx_in_edges = bridge_vertex(:, 1);
-bridge_vertex(:, 1) = 0:nNodes-1;
-bridge_conf(:, 1) = 0:nNodes-1;
-edgesIdx = bridge_edges(:, 1:2);
-for i = 0:nNodes-1
-    edgesIdx(edgesIdx == idx_in_edges(i+1)) = i;
-end
-bridge_edges(:, 1:2) = edgesIdx;
-
-env_name = [env_name '_bridge'];
-write_graph(fullfile(base_name, env_name), bridge_conf, bridge_vertex, unique(bridge_edges, 'rows'));
+% env_name = [env_name '_bridge'];
+% write_graph(fullfile(base_name, env_name), bridge_conf, bridge_vertex, unique(bridge_edges, 'rows'));
 % Graph2Text(params, fullfile(base_name, env_name), bridge_conf(:, 2:3), pointsInSight, M);
 
 if PLOT_ENVIRONMENMT && ~isempty(obstacles)
@@ -185,6 +177,7 @@ if RUN_SEARCH
     % Run in WSL
     file_to_read = [base_name_in_wsl '/' env_name];
     file_to_write = [base_name_in_wsl '/' env_name];
+    file_to_write_bridge = [base_name_in_wsl '/' env_name '_bridge'];
     cmd = [
         'wsl ' ...
         search_path ' ' ...
@@ -193,49 +186,67 @@ if RUN_SEARCH
         num2str(initial_eps) ' ' ...
         num2str(tightening_rate) ' ' ...
         num2str(method) ' ' ...
-        file_to_write];
+        file_to_write ' ' ...
+        '1 0'];
+    cmd_bridge = [
+        'wsl ' ...
+        search_path ' ' ...
+        file_to_read ' ' ...
+        num2str(initial_p) ' ' ...
+        num2str(initial_eps) ' ' ...
+        num2str(tightening_rate) ' ' ...
+        num2str(method) ' ' ...
+        file_to_write_bridge ' ' ...
+        num2str(step) ' 1'];
     disp('Executing command on WSL: ');
     disp(cmd);
     status = system(cmd);
     if status
         error('Failed to run');
     end
+    status = system(cmd_bridge);
+    if status
+        error('Failed to run bridges');
+    end
 end
 
 % Read result
 res_file = [base_name '\' env_name '_result'];
-if exist(res_file, 'file')
+res_file_bridges = [base_name '\' env_name '_bridge_result'];
+if exist(res_file, 'file') && exist(res_file_bridges, 'file')
     fid = fopen(res_file);
     C = textscan(fid, '%s', 'delimiter','\n');
     fclose(fid);
     C = C{1, 1};
-    %     [status, output] = system(['wsl cat ' res_file]);
-    %     if status
-    %         error('Failed to read output');
-    %     end
-    
     out = C{end};
-    %     splt = strsplit(output, '\n');
-    %     out = splt{end - 1};
     outsplt = strsplit(strtrim(out), ' ');
     pathIdx = str2double(outsplt(2:end)) + 1;
     
-    % cluster
-    switch clusteringMethod
-        case 'kmeans'
-            clusters = KMeansClustering(params, conf(:,2:3), num_rooms);
-        case 'spectral'
-            clusters = SpectralClustering(params, conf(:,2:3), M, num_rooms);
-        case 'inspection'
-            pointsInSight = GetPointsInSight(params, conf(:,2:3), inspectionPoints, obstacles);
-            clusters = InspectionClustering(params, conf(:,2:3), pointsInSight);
-    end
-    % plot enviroment
-    PlotEnvironment(params, conf(:,2:3), clusters, M, inspectionPoints, obstacles);
-    % plot path
+    fid = fopen(res_file_bridges);
+    C = textscan(fid, '%s', 'delimiter','\n');
+    fclose(fid);
+    C = C{1, 1};
+    out = C{end};
+    outsplt = strsplit(strtrim(out), ' ');
+    pathIdxBridges = str2double(outsplt(2:end)) + 1;
+    
+    PlotEnvironment(params, rrt_conf(:,2:3), clusters, M, inspectionPoints, obstacles, 'Paths found by IRIS');
+    % Show the original path
     for i = 1:length(pathIdx) - 1
         plot([conf(pathIdx(i), 2), conf(pathIdx(i+1), 2)], [conf(pathIdx(i), 3), conf(pathIdx(i+1), 3)], ...
-            'g', 'Marker', 'o', 'LineWidth', 2)
+            'g', 'Marker', 'o', 'LineWidth', 1, 'DisplayName', 'Original')
+    end
+    
+    % plot bridges path
+    % TODO currently taking the last rrt iteration
+    [bridge_conf, bridge_vertex, bridge_edges, vert_idx_mapping, vedges_mapping] = get_bridge_graph(rrt_conf, rrt_vertex, rrt_edges, clusters, obstacles, params, true);
+    virtual_edges = cell2mat(vedges_mapping(:, 1));
+    
+    vertInBridgePath = bridge_vertex(pathIdxBridges, 1);
+
+    for i = 1:length(pathIdxBridges) - 1
+        plot([bridge_conf(pathIdx(i), 2), bridge_conf(pathIdx(i+1), 2)], [bridge_conf(pathIdx(i), 3), bridge_conf(pathIdx(i+1), 3)], ...
+            'b', 'Marker', 'x', 'LineWidth', 1, 'DisplayName', 'Bridges', 'LineStyle','--')
     end
     
     % calculate coverage set
@@ -246,6 +257,8 @@ if exist(res_file, 'file')
     end
     cov_set = unique(cov_set) + 1;
     scatter(inspectionPoints(cov_set, 1), inspectionPoints(cov_set, 2), '*')
+    
+    legend('show');
 end
 
 return;

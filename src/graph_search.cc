@@ -1,8 +1,38 @@
 #include "graph_search.h"
+// #include <armadillo>
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Eigenvalues>
+#include <eigen3/Eigen/Dense>
+#include <vector>
+// #include "SpectralClustering.h"
+// #include "nir.h"
+
+// using namespace arma;
+using namespace Eigen;
+// using Eigen::MatrixXd;
 
 GraphSearch::GraphSearch(Inspection::GPtr graph) : graph_(graph) {
 	virtual_graph_coverage_.Clear();
 	result_.reset(new Node(0));
+}
+
+void GraphSearch::ClearGraph(Inspection::GPtr graph) {
+    graph_ = graph;
+	virtual_graph_coverage_.Clear();
+	result_.reset(new Node(0));
+
+    virtual_graph_size_ = 0;
+
+#if USE_GHOST_DATA
+    RealNum p_ = 1;
+    RealNum eps_ = 0;
+#endif
+    time_build_ = 0;
+    time_vis_ = 0;
+    time_valid_ = 0;
+    time_search_ = 0;
+    num_validated_ = 0;
+    max_time_allowed_ = 10000000;
 }
 
 SizeType GraphSearch::ExpandVirtualGraph(SizeType new_size, bool lazy_computation) {
@@ -38,6 +68,138 @@ SizeType GraphSearch::ExpandVirtualGraph(SizeType new_size, bool lazy_computatio
 			}
 		}
 	}
+
+	virtual_graph_size_ = new_size;
+	return virtual_graph_size_;
+}
+
+SizeType GraphSearch::ExpandBridgeGraph(SizeType new_size, bool lazy_computation) {
+	if (virtual_graph_size_ == graph_->NumVertices()) {
+		std::cout << "Pre-computed graph with size " << virtual_graph_size_ << " is exhausted!" << std::endl;
+		return virtual_graph_size_;
+	}
+
+	if (new_size > graph_->NumVertices()) {
+		new_size = graph_->NumVertices();
+	}
+
+	for (SizeType i = virtual_graph_size_; i < new_size; ++i) {
+		Inspection::VPtr v = graph_->Vertex(i);
+		time_vis_ += v->time_vis;
+		time_build_ += v->time_build;
+		virtual_graph_coverage_.Insert(v->vis);
+	}
+
+    // mat M = zeros<mat>(new_size, new_size);
+    // mat M(new_size, new_size);
+    MatrixXd M = MatrixXd::Zero(new_size, new_size);
+
+	for (SizeType i = 0; i < graph_->NumEdges(); ++i) {
+		Inspection::EPtr e = graph_->Edge(i);
+		if (e->source >= new_size) {
+			break;
+		}
+
+		if ( (!e->in_virtual_graph) && e->target < new_size ) {
+
+            // build M matrix
+            M(e->source, e->target) = e->cost;
+            M(e->target, e->source) = e->cost;
+
+			e->in_virtual_graph = true;
+			if (!lazy_computation || e->checked) {
+                time_valid_ += e->time_forward_kinematics;
+                time_valid_ += e->time_collision_detection;
+                num_validated_++;
+                e->virtual_checked = true;
+			}
+		}
+	}
+
+    std::cout << M << std::endl;
+
+    // nir* n = new nir(K);
+    // SpectralClustering* c = new SpectralClustering(M, K);
+
+    // std::vector<int> items = {1,2,3,4,5,6,7,8,9,10};
+
+    // // generate similarity matrix
+    // unsigned int size = items.size();
+    // Eigen::MatrixXd m = Eigen::MatrixXd::Zero(size,size);
+
+    // for (unsigned int i=0; i < size; i++) {
+    //     for (unsigned int j=0; j < size; j++) {
+    //         // generate similarity
+    //         int d = items[i] - items[j];
+    //         int similarity = exp(-d*d / 100);
+    //         m(i,j) = similarity;
+    //         m(j,i) = similarity;
+    //     }
+    // }
+    // int numDims = size;
+
+    // do eigenvalue decomposition
+    // SpectralClustering* c = new SpectralClustering(m, numDims);
+    // SpectralClustering* c = new SpectralClustering(numDims);
+
+
+    // compute Laplacian matrix
+    auto degree_vec = M.colwise().sum();
+    MatrixXd D(degree_vec.asDiagonal());
+    MatrixXd L = D - M;
+
+    std::cout << L << std::endl;
+
+    // VectorXcd eivals = L.eigenvalues(); // eigenvalues
+    // VectorXd eivals2(eivals);
+    // EigenSolver<MatrixXd> es(L, true); // eigenvectors
+    SelfAdjointEigenSolver<MatrixXd> ses(L);
+
+    std::cout << ses.eigenvalues() << std::endl;
+    std::cout << ses.eigenvectors() << std::endl;
+
+    auto eivals = ses.eigenvalues();
+    auto eivecs = ses.eigenvectors();
+
+    int K = 4; // number of clusters
+    // MatrixXd z(new_size, K);
+    std::vector<int> inv_eivals;
+    for (int i = 0; i < eivals.size(); ++i) {
+        inv_eivals[i] = 1 / eivals[i];
+    }
+    
+    // for (SizeType i = 0; i < new_size; ++i) {
+    //     z.row(i) = VectorXd::Ones(K).operator/(eivals.segment(1, K));
+    // }
+    // std::cout << z << std::endl;
+
+    // rowvec degree_vec = sum(M, 0);
+    // mat D = diagmat(degree_vec);
+    // mat L = D - M;
+
+    // int K = 4; // number of clusters
+    // // cx_vec eigval;
+    // // cx_mat eigvec;
+
+    // cout << L.is_symmetric() << endl;
+
+    // // for matrices with real elements
+
+    // mat A = randu<mat>(50,50);
+    // mat B = A.t()*A;  // generate a symmetric matrix
+
+    // vec eigval;
+    // mat eigvec;
+
+    // eig_sym(eigval, eigvec, B);
+
+    // find eigenvalues/eigenvectors
+    // eig_gen(eigval, eigvec, L);
+
+    // mat z(new_size, K);
+    // for (SizeType i = 0; i < new_size; ++i) {
+    //     z.row(i) = eigval.subvec(1, size(eigval));
+    // }
 
 	virtual_graph_size_ = new_size;
 	return virtual_graph_size_;

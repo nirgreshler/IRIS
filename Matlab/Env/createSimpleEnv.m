@@ -1,20 +1,20 @@
 clear
 close all
 clc
-nSqrRooms = 3;
-homeSize = 9;%nSqrRooms^2;
+nSqrRooms = 2;
+homeSize = 8;%nSqrRooms^2;
 nRooms = nSqrRooms^2;
 roomSize = homeSize/nSqrRooms;
 envGrid = 0.01;
 doorSize = 0.25;
-nPoints = 1500;
+nPoints = 200;
 nInspectionPoints = 400;
 connectionRadius = 0.8;
 sightRadius = roomSize*sqrt(2)/2;
 samplingMethod = 'RRT'; % 'Uniform' / 'Sobol' / 'RRT'
 fol = fileparts(mfilename('fullpath'));
 rng('shuffle')
-clusteringMethod = 'inspection';
+clusteringMethod = 'spectral';
 outputFolder = fullfile(fol, '..', 'Graphs', filesep);
 saveEnv = true;
 params.homeSize = homeSize;
