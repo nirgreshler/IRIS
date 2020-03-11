@@ -30,7 +30,8 @@ end
 eigenValues = diag(eigenMat);
 if nargin < 4
     dEigens = diff(eigenValues);
-    [~, maxIdx] = max(dEigens(max(params.minClusters-1,1):params.maxClusters));
+    maxVal = max(dEigens(max(params.minClusters-1,1):params.maxClusters));
+    maxIdx = find(dEigens == maxVal);
     nClusters = maxIdx+1;
 end
 kSmallestEigenvalues = eigenValues(1:nClusters+1);
