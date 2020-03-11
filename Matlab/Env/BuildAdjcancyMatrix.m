@@ -10,5 +10,5 @@ for k = 1:nPoints-1
             M(m,k) = M(k,m);
         end
     end
-    disp(['Building Adjancy Matrix: ', num2str(k) '/' num2str(nPoints)]);
+%     disp(['Building Adjancy Matrix: ', num2str(k) '/' num2str(nPoints)]);
 end

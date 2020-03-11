@@ -1,6 +1,6 @@
-clear
-close all
-clc
+% clear
+% close all
+% clc
 
 env_name = 'drone_1000';
 addpath(genpath(pwd))
@@ -71,18 +71,16 @@ for k = 1:nClusters
     plot(1:nInspectionPoints, cInspectionPoints{k}, '.-', 'DisplayName', sprintf('Cluster #%d (%d points)', k, sum(pointsInCluster)))
 %     histogram(cInspectionPoints{k}, nInspectionPoints)
 end
-title('Coverage per Cluster')
+title(['Coverage per Cluster (', num2str(nClusters), ' Clusters)'])
 legend show
-title([num2str(nClusters), ' Clusters'])
 %% Plot points
 figure; hold all
 set(gca, 'colorOrder', colorOrder)
 for k = 1:nClusters
     pointsInCluster = clusters == clusterIdcs(k);
-    plot3(conf(pointsInCluster,2), conf(pointsInCluster,3), conf(pointsInCluster,4), '.', 'DisplayName', sprintf('Cluster #%d (%d points)', k, sum(pointsInCluster)))
+    plot3(conf(pointsInCluster,2), conf(pointsInCluster,3), conf(pointsInCluster,4), '.', 'MarkerSize', 15, 'DisplayName', sprintf('Cluster #%d (%d points)', k, sum(pointsInCluster)))
 end
 xlabel('x'); ylabel('x'); zlabel('z');
 title('Configuration Space')
 legend show
-title([num2str(nClusters), ' Clusters'])
 grid on

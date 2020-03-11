@@ -5,7 +5,7 @@ clear
 rng(1);
 
 % env_name = 'planar_1000';
-num_rooms = 4;
+num_rooms = 16;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
 
 K_MEANS_START = 2;
@@ -48,9 +48,10 @@ base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];
 [conf, vertex, edges] = read_graph(fullfile(base_name, env_name));
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
 
-params.maxClusters = 10;
-params.minClusters = 3;
+params.maxClusters = 30;
+params.minClusters = 20;
 params.showText = false;
+params.plotEdges = false;
 
 % Perform clustering
 % M = Edges2M(edges(:,[1 2 7]));
@@ -71,6 +72,7 @@ params.showText = false;
 % title('Bridge graph BEFORE inner edges');
 
 step_in_bridge_search = 10;
+step_in_bridge_search = size(conf, 1);
 % save bridge graphs after each RRT iteration(s)
 folder = fullfile(base_name, [env_name '_bridges']);
 if ~exist(folder, 'dir')
@@ -80,7 +82,7 @@ else
     pause(2);
     mkdir(folder);
 end
-params.plotEdges = true;
+
 for i = step_in_bridge_search:step_in_bridge_search:size(conf, 1)
     rrt_conf = conf(1:i, :);
     rrt_vertex = vertex(1:i, :);
@@ -148,29 +150,29 @@ end
 
 PlotEnvironment(params, rrt_conf(:,2:3), clusters, M, inspectionPoints, obstacles, ['Clustered Environment Using ' clusteringMethod ' Clustering']);
 
-PlotEnvironment(params, rrt_conf(:,2:3), clusters, M, inspectionPoints, obstacles, ['Original and Bridges Graphs after ' num2str(i) ' RRT Iterations']);
-scatter(bridge_conf(:, 2), bridge_conf(:, 3), 'om', 'Linewidth', 1);
-for k = 1:size(bridge_edges, 1)
-    p1 = bridge_conf(bridge_edges(k, 1)+1, 2:3);
-    p2 = bridge_conf(bridge_edges(k, 2)+1, 2:3);
-    vEdgeIdx = find(virtual_edges == k);
-    if isempty(vEdgeIdx)
-        plot([p1(1) p2(1)], [p1(2) p2(2)], '--r', 'LineWidth', 2);
-    else
-        % a virtual edge
-        plot([p1(1) p2(1)], [p1(2) p2(2)], '-.r', 'LineWidth', 2);
-        % show the real path
-        vEdgeStartRealIdx = vert_idx_mapping(bridge_edges(k, 1)+1);
-        vEdgeEndRealIdx = vert_idx_mapping(bridge_edges(k, 2)+1);
-        vertInRealPath = vedges_mapping{vEdgeIdx, 2}';
-        edgesInRealPath = get_edges_per_vertex(rrt_edges, [vEdgeStartRealIdx, vEdgeEndRealIdx, vertInRealPath]);
-        for kk = 1:size(edgesInRealPath, 1)
-            p1 = rrt_conf(edgesInRealPath(kk, 1)+1, 2:3);
-            p2 = rrt_conf(edgesInRealPath(kk, 2)+1, 2:3);
-            plot([p1(1) p2(1)], [p1(2) p2(2)], '-.b', 'LineWidth', 2);
-        end
-    end
-end
+% PlotEnvironment(params, rrt_conf(:,2:3), clusters, M, inspectionPoints, obstacles, ['Original and Bridges Graphs after ' num2str(i) ' RRT Iterations']);
+% scatter(bridge_conf(:, 2), bridge_conf(:, 3), 'om', 'Linewidth', 1);
+% for k = 1:size(bridge_edges, 1)
+%     p1 = bridge_conf(bridge_edges(k, 1)+1, 2:3);
+%     p2 = bridge_conf(bridge_edges(k, 2)+1, 2:3);
+%     vEdgeIdx = find(virtual_edges == k);
+%     if isempty(vEdgeIdx)
+%         plot([p1(1) p2(1)], [p1(2) p2(2)], '--r', 'LineWidth', 2);
+%     else
+%         % a virtual edge
+%         plot([p1(1) p2(1)], [p1(2) p2(2)], '-.r', 'LineWidth', 2);
+%         % show the real path
+%         vEdgeStartRealIdx = vert_idx_mapping(bridge_edges(k, 1)+1);
+%         vEdgeEndRealIdx = vert_idx_mapping(bridge_edges(k, 2)+1);
+%         vertInRealPath = vedges_mapping{vEdgeIdx, 2}';
+%         edgesInRealPath = get_edges_per_vertex(rrt_edges, [vEdgeStartRealIdx, vEdgeEndRealIdx, vertInRealPath]);
+%         for kk = 1:size(edgesInRealPath, 1)
+%             p1 = rrt_conf(edgesInRealPath(kk, 1)+1, 2:3);
+%             p2 = rrt_conf(edgesInRealPath(kk, 2)+1, 2:3);
+%             plot([p1(1) p2(1)], [p1(2) p2(2)], '-.b', 'LineWidth', 2);
+%         end
+%     end
+% end
 
 % plotGraph(bridge_conf, bridge_vertex, bridge_edges);
 % title('Bridge graph AFTER inner edges');
@@ -215,7 +217,7 @@ if RUN_SEARCH
         num2str(tightening_rate) ' ' ...
         num2str(method) ' ' ...
         file_to_write ' ' ...
-        '1 0'];
+        num2str(step_in_bridge_search) ' 0'];
     cmd_bridge = [
         'wsl ' ...
         search_path ' ' ...
@@ -228,11 +230,15 @@ if RUN_SEARCH
         num2str(step_in_bridge_search) ' 1'];
     disp('Executing command on WSL: ');
     disp(cmd);
-    status = system(cmd);
-    if status
-        error('Failed to run');
-    end
-    status = system(cmd_bridge);
+%     tic
+%         status = system(cmd);
+%     toc
+%     if status
+%         error('Failed to run');
+%     end
+    tic
+        status = system(cmd_bridge);
+    toc
     if status
         error('Failed to run bridges');
     end
