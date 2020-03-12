@@ -49,7 +49,9 @@ for iClus = 1:numClusters
     % We want to find the shortest path between all bridge nodes to all
     % bridge nodes
     points = conf(vertInClus + 1, 2:3);
-    Mc = BuildAdjcancyMatrix(points, obstacles, params.connectionRadius); % TODO take from original M
+    clustEdges = get_edges_per_vertex(edges, vertInClus);
+    Mc = Edges2M(clustEdges(:,[1 2 7]), [], true);
+%     Mc = BuildAdjcancyMatrix(points, obstacles, params.connectionRadius); % TODO take from original M
     %     g = graph(Mc, vertInClusNames);
     %     d = distances(g, vertInClusInBridgeNames, vertInClusInBridgeNames, 'Method' ,'positive');
     %     [TR, d] = shortestpathtree(g ,vertInClusInBridgeNames, vertInClusInBridgeNames, 'Method' ,'positive');

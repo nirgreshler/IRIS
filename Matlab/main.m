@@ -7,7 +7,7 @@ rng(1);
 % env_name = 'planar_1000';
 num_rooms = 4;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
-
+env_name = 'planar_1000';
 K_MEANS_START = 2;
 K_MEANS_END = 10;
 k_vec = K_MEANS_START:K_MEANS_END;
@@ -247,12 +247,12 @@ if RUN_SEARCH
         num2str(step_in_bridge_search) ' 1'];
     disp('Executing command on WSL: ');
     disp(cmd);
-%     tic
-%         status = system(cmd);
-%     toc
-%     if status
-%         error('Failed to run');
-%     end
+    tic
+        status = system(cmd);
+    toc
+    if status
+        error('Failed to run');
+    end
     tic
         status = system(cmd_bridge);
     toc
