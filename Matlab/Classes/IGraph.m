@@ -1,6 +1,8 @@
-classdef Graph < handle
+classdef IGraph < handle
     
     properties
+        graph
+        
         v Vertex
         e Edge
         M
@@ -9,19 +11,31 @@ classdef Graph < handle
     end
     
     methods
-        function g = Graph(filepath)
+        function g = IGraph(filepath, clusParams)
              [conf, vertex, edge] = g.read_graph(filepath);
              
              nV = size(conf, 1);
              nE = size(edge, 1);
-             
+
              g.v = Vertex.empty(nV, 0);
              g.e = Edge.empty(nE, 0);
 
-             g.v = arrayfun(@(i) Vertex(conf(i, :), vertex(i, :)), 1:size(conf, 1))';
-             g.e = arrayfun(@(i) Edge(g, edge(i, :)), 1:size(edge, 1))';
-             g.edges2M();
-
+             g.v = arrayfun(@(i) Vertex(table2array(conf(i, :)), [table2array(vertex(i, 1:3)), vertex.vis{i}]), 1:size(conf, 1))';
+             g.e = arrayfun(@(i) Edge(g, table2array(edge(i, :))), 1:size(edge, 1))';
+             g.M = g.edges2M(table2array(edge));
+            
+             % Perform clustering
+             cluster = SpectralClustering(clusParams, table2array(conf(:, 2:end)), g.M);
+             cluster = table(cluster);
+             
+             % g.graph = graph(M, [vertex, conf(:, 2:end)]);
+             EndNodes = [edge.source+1, edge.target+1];
+             EndNodes = table(EndNodes);
+             virtual = zeros(size(EndNodes, 1), 1);
+             virutal = table(virtual);
+             g.graph = graph([EndNodes, edge(:, 3:end), virutal], [vertex, conf(:, 2:end), cluster]);
+%              g.graph = g.graph.addnode([vertex, conf(:, 2:end)]);
+%              g.graph = g.graph.addedge([EndNodes, edge(:, 3:end)]);
         end
         
         function nodes = getNodeById(g, id)
@@ -51,6 +65,12 @@ classdef Graph < handle
             
             % Import conf file
             opts = delimitedTextImportOptions("NumVariables", conf_dims + 1);
+            opts.VariableNames{1} = 'id';
+            opts.VariableTypes{1} = 'double';
+            for i = 2:length(opts.VariableNames)
+                opts.VariableNames{i} = ['x' num2str(i - 1)];
+                opts.VariableTypes{i} = 'double';
+            end
             opts.DataLines = [1, Inf];
             opts.Delimiter = " ";
             opts.ExtraColumnsRule = "ignore";
@@ -60,7 +80,7 @@ classdef Graph < handle
             % Import the data
             conf = readtable([base_name '_conf'], opts);
             % Convert to output type
-            conf = str2double(table2array(conf));
+%             conf = str2double(table2array(conf));
             
             % Clear temporary variables
             clear opts
@@ -71,27 +91,43 @@ classdef Graph < handle
             C = textscan(fid, '%s', 'delimiter','\n');
             fclose(fid);
             C = C{1};
-            max_len = max(cellfun(@(x) length(strsplit(x, ' ')), C)) - 1;
             
-            opts = delimitedTextImportOptions("NumVariables", max_len);
+            id = zeros(size(C, 1), 1);
+            time_vis = zeros(size(C, 1), 1);
+            time_build = zeros(size(C, 1), 1);
+            vis = cell(size(C, 1), 1);
             
-            % Specify range and delimiter
-            opts.DataLines = [1, Inf];
-            opts.Delimiter = " ";
+            for i = 1:size(C, 1)
+                lSp = strsplit(C{i});
+                id(i) = str2double(lSp{1});
+                time_vis(i) = str2double(lSp{2});
+                time_build(i) = str2double(lSp{3});
+                vis{i} = cellfun(@(x) str2double(x), lSp(4:end));
+            end
             
-            % Specify column names and types
-            opts.ExtraColumnsRule = "ignore";
-            opts.EmptyLineRule = "read";
-            opts.LeadingDelimitersRule = "ignore";
+            vertex = table(id, time_vis, time_build, vis);
             
-            % Import the data
-            vertex = readtable([base_name '_vertex'], opts);
-            
-            % Convert to output type
-            vertex = str2double(table2array(vertex));
-            
-            % Clear temporary variables
-            clear opts
+%             max_len = max(cellfun(@(x) length(strsplit(x, ' ')), C)) - 1;
+%             
+%             opts = delimitedTextImportOptions("NumVariables", max_len);
+%             
+%             % Specify range and delimiter
+%             opts.DataLines = [1, Inf];
+%             opts.Delimiter = " ";
+%             
+%             % Specify column names and types
+%             opts.ExtraColumnsRule = "ignore";
+%             opts.EmptyLineRule = "read";
+%             opts.LeadingDelimitersRule = "ignore";
+%             
+%             % Import the data
+%             vertex = readtable([base_name '_vertex'], opts);
+%             
+%             % Convert to output type
+%             vertex = str2double(table2array(vertex));
+%             
+%             % Clear temporary variables
+%             clear opts
             
             % Import edge data
             opts = delimitedTextImportOptions("NumVariables", 7);
@@ -99,9 +135,9 @@ classdef Graph < handle
             % Specify range and delimiter
             opts.DataLines = [1, Inf];
             opts.Delimiter = " ";
-            
+                       
             % Specify column names and types
-            opts.VariableNames = ["VarName1", "VarName2", "VarName3", "VarName4", "VarName5", "VarName6", "VarName7"];
+            opts.VariableNames = ["source", "target", "checked", "valid", "time_forward_kinematics", "time_collision_detection", "Weight"];
             opts.VariableTypes = ["double", "double", "double", "double", "double", "double", "double"];
             opts.ExtraColumnsRule = "ignore";
             opts.EmptyLineRule = "read";
@@ -110,7 +146,7 @@ classdef Graph < handle
             edge = readtable([base_name '_edge'], opts);
             
             % Convert to output type
-            edge = table2array(edge);
+%             edge = table2array(edge);
             
             % Clear temporary variables
             clear opts
@@ -130,16 +166,15 @@ classdef Graph < handle
             end
         end
         
-        function edges2M(g)
-            edges = g.e;
+        function M = edges2M(g, edges)
             nPoints = g.num_vertices();
 
-            g.M = zeros(nPoints);
+            M = zeros(nPoints);
             for k = 1:size(edges,1)
-                g.M(edges(k).source.id+1, edges(k).target.id+1) = edges(k).cost;
-                g.M(edges(k).target.id+1, edges(k).source.id+1) = edges(k).cost;
+                M(edges(k, 1)+1, edges(k, 2)+1) = edges(k, end);
+                M(edges(k, 2)+1, edges(k, 1)+1) = edges(k, end);
             end
-            assert(issymmetric(g.M));
+            assert(issymmetric(M));
         end
     end
 end

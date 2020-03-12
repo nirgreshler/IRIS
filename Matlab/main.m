@@ -7,7 +7,7 @@ rng(1);
 % env_name = 'planar_1000';
 num_rooms = 4;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
-env_name = 'planar_1000';
+% env_name = 'crisp_100';
 K_MEANS_START = 2;
 K_MEANS_END = 10;
 k_vec = K_MEANS_START:K_MEANS_END;
@@ -45,8 +45,6 @@ wsl_path = ['/home/' username '/Project/IRIS'];
 search_path = [wsl_path, '/debug/app/search_graph'];
 base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];
 
-G = Graph(fullfile(base_name, env_name));
-
 [conf, vertex, edges] = read_graph(fullfile(base_name, env_name));
 
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
@@ -56,19 +54,32 @@ params.minClusters = 20;
 params.showText = false;
 params.plotEdges = false;
 
-clusters_ = SpectralClustering(params, conf(:,2:3), G.M);
-nClus = max(clusters_);
-clusters = Cluster.empty(0, 0);
-clustIdx = 1;
-for iClus = 1:nClus
-    vertIdsInClus = vertex(clusters_ == iClus, 1);
-    if ~isempty(vertIdsInClus)
-        clusters(clustIdx, 1) = Cluster(clustIdx, G.getNodeById(vertIdsInClus'));
-        clustIdx = clustIdx + 1;
-    end
-end
+% clusters_ = SpectralClustering(params, conf(:,2:3), G.M);
 
-BG = build_bridge_graph(G, clusters);
+G = IGraph(fullfile(base_name, env_name), params);
+
+% nClus = max(clusters_);
+% % clusters = Cluster.empty(0, 0);
+% clusters = cell(0, 1);
+% % clustIdx = 1;
+% for iClus = 1:nClus
+%     vertIdsInClus = G.graph.Nodes.id(clusters_ == iClus, 1);
+%     
+%     clusters{size(clusters, 1) + 1, 1} = G.graph.subgraph(vertIdsInClus + 1);
+% %     if ~isempty(vertIdsInClus)
+% %         clusters(clustIdx, 1) = Cluster(clustIdx, G.getNodeById(vertIdsInClus'));
+% %         clustIdx = clustIdx + 1;
+% %     end
+% end
+
+BG = build_bridge_graph(G);
+
+write_graph(fullfile(base_name, [env_name '_bridge']), BG);
+
+params.plotEdges = true;
+PlotEnvironment(params, [G.graph.Nodes.x1, G.graph.Nodes.x2], G.graph.Nodes.cluster, G.graph.adjacency, inspectionPoints, obstacles, 'Spectral');
+scatter(BG.Nodes.x1, BG.Nodes.x2, 'om', 'Linewidth', 1);
+PlotEnvironment(params, [BG.Nodes.x1, BG.Nodes.x2], BG.Nodes.cluster, BG.adjacency, inspectionPoints, obstacles, 'Spectral');
 
 % Perform clustering
 % M = Edges2M(edges(:,[1 2 7]));
