@@ -5,7 +5,7 @@ clear
 rng(1);
 
 % env_name = 'planar_1000';
-num_rooms = 16;
+num_rooms = 4;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
 
 K_MEANS_START = 2;
@@ -45,13 +45,30 @@ wsl_path = ['/home/' username '/Project/IRIS'];
 search_path = [wsl_path, '/debug/app/search_graph'];
 base_name_in_wsl = ['/mnt/' lower(strrep(strrep(base_name,':',''),'\','/'))];
 
+G = Graph(fullfile(base_name, env_name));
+
 [conf, vertex, edges] = read_graph(fullfile(base_name, env_name));
+
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
 
 params.maxClusters = 30;
 params.minClusters = 20;
 params.showText = false;
 params.plotEdges = false;
+
+clusters_ = SpectralClustering(params, conf(:,2:3), G.M);
+nClus = max(clusters_);
+clusters = Cluster.empty(0, 0);
+clustIdx = 1;
+for iClus = 1:nClus
+    vertIdsInClus = vertex(clusters_ == iClus, 1);
+    if ~isempty(vertIdsInClus)
+        clusters(clustIdx, 1) = Cluster(clustIdx, G.getNodeById(vertIdsInClus'));
+        clustIdx = clustIdx + 1;
+    end
+end
+
+BG = build_bridge_graph(G, clusters);
 
 % Perform clustering
 % M = Edges2M(edges(:,[1 2 7]));
