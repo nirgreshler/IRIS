@@ -3,7 +3,7 @@ close all
 clc
 set(0,'DefaultFigureWindowStyle','docked')
 
-env_name = 'syn_9rooms';
+env_name = 'drone_1000';
 addpath(genpath(pwd))
 
 base_name = fullfile(pwd, 'Graphs');
@@ -113,14 +113,18 @@ end
 %% Accumulating clusters by score
 [~,i] = max(clusterScores);
 accumIdcs = i;
+remainingIdcs = setxor(1:nClusters, accumIdcs);
 coverageSoFar = any(cell2mat(cInspectionPoints(accumIdcs)),1);
-
-[sortedScores, sIdcs] = sort(clusterScores, 'descend');
-totalPoints = 0;
-for k = 1:nClusters
-    totalCoverage = mean(any(cell2mat(cInspectionPoints(sIdcs(1:k))) > 0, 1))*100;
-    totalPoints = totalPoints+sum(clusters == clusterIdcs(sIdcs(k)));
-    fprintf('After %d Clusters: %d points, %.1f%% Coverage.\n', k, totalPoints, totalCoverage)
+totalPoints = sum(clusters == clusterIdcs(i));
+fprintf('After 1 Cluster (Added #%d): %d points, %.1f%% Coverage.\n', i, totalPoints, mean(coverageSoFar)*100)
+for k = 2:nClusters
+% choose next best cluster
+    [~, nextIdx] = max(cellfun(@(t)sum(t | coverageSoFar), cInspectionPoints(remainingIdcs)));
+    accumIdcs = [accumIdcs remainingIdcs(nextIdx)];
+    totalPoints = totalPoints+sum(clusters == clusterIdcs(remainingIdcs(nextIdx)));
+    coverageSoFar = any(cell2mat(cInspectionPoints(accumIdcs)),1);
+    fprintf('After %d Clusters (Added #%d): %d points, %.1f%% Coverage.\n', k, remainingIdcs(nextIdx), totalPoints, mean(coverageSoFar)*100)
+    remainingIdcs = setxor(1:nClusters, accumIdcs);
 end
 %% Plot points
 if contains(env_name, 'drone')
@@ -134,4 +138,17 @@ if contains(env_name, 'drone')
     title('Configuration Space')
     legend show
     grid on
+    fId = fopen(fullfile('..', 'data', 'bridge', 'bridge.obj'));
+    line = fgetl(fId);
+    points = [];
+    k = 0;
+    while line~=-1
+        if line(1) == 'v' && line(2) == ' '
+            point = str2num(line(3:end));
+            points = [points; point];
+        end
+        line = fgetl(fId);
+    end
+    fclose(fId);
+    plot3(points(:,1), points(:,2), points(:,3), '.k')
 end
