@@ -62,8 +62,13 @@ classdef IGraph < handle
             % Build the bridge graph, with all edges of bridges (between and within
             % clusters)
             BG = G.graph.subgraph(bridgeNodeIds + 1);
+            A = BG.adjacency;
             
             % Add virtual edges between bridge vert. within clusters
+            ptsPerCluster = hist(BG.Nodes.cluster);
+            maxVirtEdges = sum(ptsPerCluster.^2);
+            vEdgesArray = zeros(maxVirtEdges, 8);
+            vEIdx = 1;
             for iClus = 1:nClusters
                 clIdx = clusters(iClus);
                 % get vert in this cluster
@@ -78,16 +83,25 @@ classdef IGraph < handle
                 dist = clusterG.distances(vertIdxInClus, vertIdxInClus);
                 for i = 1:length(vertIdxInBridgeClus)
                     for j = i+1:length(vertIdxInBridgeClus)
-                        ee = BG.findedge(vertIdxInBridgeClus(i), vertIdxInBridgeClus(j));
-                        if ee == 0
-                            edgeTable = table([vertIdxInBridgeClus(i), vertIdxInBridgeClus(j)], 1, 1, 0, 0,...
-                                dist(i,j), 1, ...
-                                'VariableName', BG.Edges.Properties.VariableNames);
-                            BG = BG.addedge(edgeTable);
+                        % ee = BG.findedge(vertIdxInBridgeClus(i), vertIdxInBridgeClus(j));
+                        ee = A(vertIdxInBridgeClus(i), vertIdxInBridgeClus(j));
+                        if full(ee) == 0
+                            vEdgesArray(vEIdx, :) = [vertIdxInBridgeClus(i), vertIdxInBridgeClus(j), 1, 1, 0, 0,...
+                                dist(i,j), 1];
+                            vEIdx = vEIdx + 1;
                         end
                     end
                 end
             end
+            
+            % remove unused rows
+            vEdgesArray = vEdgesArray(1:vEIdx-1, :); 
+            edgeTable = table([vEdgesArray(:, 1), vEdgesArray(:, 2)], ...
+                vEdgesArray(:, 3), vEdgesArray(:, 4), vEdgesArray(:, 5), ...
+                vEdgesArray(:, 6), vEdgesArray(:, 7), vEdgesArray(:, 8), ...
+                'VariableName', BG.Edges.Properties.VariableNames);
+            BG = BG.addedge(edgeTable);
+            
             % Reorder nodes so that id=0 is first
             [~, order] = sort(BG.Nodes.id);
             BG = BG.reordernodes(order);
@@ -129,8 +143,9 @@ classdef IGraph < handle
             
             % edges
             fId = fopen([pathToWrite '_edge'], 'w');
+            edgeArray = table2array(G.Edges(:, 1:end-1));
             for k = 1:size(G.Edges, 1)
-                edgeLine = table2array(G.Edges(k, 1:end-1));
+                edgeLine = edgeArray(k, :);
                 % fix indices
                 edgeLine(1) = edgeLine(1) - 1;
                 edgeLine(2) = edgeLine(2) - 1;
