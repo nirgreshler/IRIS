@@ -1,5 +1,34 @@
 function PlotEnvironment(params, points, clusters, M, inspectionPoints, obstacles, plotTitle)
 
+if nargin == 5
+    if isa(points, 'IGraph')
+        G = points.graph;
+    elseif isa(points, 'graph')
+        G = points;
+    end
+    
+    plotTitle = inspectionPoints;
+    obstacles = M;
+    inspectionPoints = clusters;
+    
+    points = [G.Nodes.x1, G.Nodes.x2];
+    clusters = G.Nodes.cluster;
+    M = G.adjacency;
+    % mark virtual edges
+    if params.plotEdges
+        for i = 1:size(M, 1)
+            for j = i+1:size(M, 2)
+                if M(i, j)
+                    is_v = G.Edges.virtual(G.findedge(i, j));
+                    if is_v
+                        M(i, j) = 0.5;
+                    end
+                end
+            end
+        end
+    end
+end
+
 graphHandles = [];
 
 homeSize = params.homeSize;
@@ -47,7 +76,12 @@ if params.plotEdges
             if M(k,m) > 0
                 p1 = points(k,:);
                 p2 = points(m,:);
-                graphHandles = [graphHandles plot([p1(1) p2(1)], [p1(2) p2(2)], '-k')];
+                if M(k, m) == 0.5
+                    line_style = ':k';
+                else
+                    line_style = '-k';
+                end
+                graphHandles = [graphHandles plot([p1(1) p2(1)], [p1(2) p2(2)], line_style)];
             end
         end
     end

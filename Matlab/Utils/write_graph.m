@@ -36,3 +36,4 @@ for k = 1:size(G.Edges, 1)
     fprintf(fId, '%d %d %d %d %d %d %f\n', table2array(G.Edges(k, 1:end-1)));
 end
 fclose(fId);
+end

@@ -1,3 +1,5 @@
+run_search;
+return;
 close all
 clc
 clear
@@ -54,9 +56,9 @@ params.minClusters = 20;
 params.showText = false;
 params.plotEdges = false;
 
+clustering = Clustering(clusteringMethod, params);
 % clusters_ = SpectralClustering(params, conf(:,2:3), G.M);
-
-G = IGraph(fullfile(base_name, env_name), params);
+G = IGraph(fullfile(base_name, env_name), clustering);
 
 % nClus = max(clusters_);
 % % clusters = Cluster.empty(0, 0);
@@ -72,14 +74,19 @@ G = IGraph(fullfile(base_name, env_name), params);
 % %     end
 % end
 
-BG = build_bridge_graph(G);
+BG = G.build_bridge_graph();
 
-write_graph(fullfile(base_name, [env_name '_bridge']), BG);
+BG.write_graph(fullfile(base_name, [env_name '_bridge']));
 
 params.plotEdges = true;
-PlotEnvironment(params, [G.graph.Nodes.x1, G.graph.Nodes.x2], G.graph.Nodes.cluster, G.graph.adjacency, inspectionPoints, obstacles, 'Spectral');
-scatter(BG.Nodes.x1, BG.Nodes.x2, 'om', 'Linewidth', 1);
-PlotEnvironment(params, [BG.Nodes.x1, BG.Nodes.x2], BG.Nodes.cluster, BG.adjacency, inspectionPoints, obstacles, 'Spectral');
+
+PlotEnvironment(params, G, inspectionPoints, obstacles, 'Original Clustered Graph');
+scatter(BG.graph.Nodes.x1, BG.graph.Nodes.x2, 'om', 'Linewidth', 1);
+PlotEnvironment(params, BG, inspectionPoints, obstacles, 'Bridge Graph');
+
+% PlotEnvironment(params, [G.graph.Nodes.x1, G.graph.Nodes.x2], G.graph.Nodes.cluster, G.graph.adjacency, inspectionPoints, obstacles, 'Spectral');
+% scatter(BG.Nodes.x1, BG.Nodes.x2, 'om', 'Linewidth', 1);
+% PlotEnvironment(params, [BG.Nodes.x1, BG.Nodes.x2], BG.Nodes.cluster, BG.adjacency, inspectionPoints, obstacles, 'Spectral');
 
 % Perform clustering
 % M = Edges2M(edges(:,[1 2 7]));
