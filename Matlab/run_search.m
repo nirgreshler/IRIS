@@ -9,14 +9,14 @@ addpath(genpath(pwd))
 define_path;
 
 %% Environment settings
-num_rooms = 4;
+num_rooms = 9;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
 % env_name = 'crisp_100';
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
 
 %% Plotting settings
 params.showText = false;
-params.plotEdges = true;
+params.plotEdges = false;
 
 %% Clustering settings
 clusteringMethod = 'spectral'; % 'kmeans' / 'spectral' / 'inspection'
@@ -45,8 +45,9 @@ BG.write_graph(bridge_graph_path);
 %% Show the graphs
 PlotEnvironment(params, G, inspectionPoints, obstacles, 'Original Clustered Graph');
 scatter(BG.graph.Nodes.x1, BG.graph.Nodes.x2, 'om', 'Linewidth', 1);
+params.plotEdges = true;
 PlotEnvironment(params, BG, inspectionPoints, obstacles, 'Bridge Graph');
-
+params.plotEdges = false;
 %% Run the search in WSL
 file_to_read = [base_name_in_wsl '/' env_name];
 file_to_write = [base_name_in_wsl '/' env_name];

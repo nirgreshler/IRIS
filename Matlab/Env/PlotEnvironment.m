@@ -99,7 +99,7 @@ end
 
 if params.showText
     for i = 1:nPoints
-        graphHandles = [graphHandles text(points(i, 1), points(i, 2), num2str(i-1))];
+        graphHandles = [graphHandles text(points(i, 1), points(i, 2), num2str(i-1), 'Color', 'r')];
     end
 end
 

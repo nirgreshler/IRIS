@@ -1,13 +1,13 @@
 clear
 close all
 clc
-nSqrRooms = 2;
-homeSize = 8;%nSqrRooms^2;
+nSqrRooms = 3;
+homeSize = 9;%nSqrRooms^2;
 nRooms = nSqrRooms^2;
 roomSize = homeSize/nSqrRooms;
 envGrid = 0.01;
 doorSize = 0.25;
-nPoints = 200;
+nPoints = 1000;
 nInspectionPoints = 400;
 connectionRadius = 0.8;
 sightRadius = roomSize*sqrt(2) / 2;
@@ -23,7 +23,7 @@ params.sightRadius = sightRadius;
 params.doorSize = doorSize;
 params.nRooms = nRooms;
 params.maxClusters = 50;
-params.plotEdges = true;
+params.plotEdges = false;
 %% Create points
 inspectionPoints = GetInspectionPoints(homeSize, nInspectionPoints);
 [obstacles, doors] = GetObstacles(homeSize, nRooms, doorSize, envGrid);

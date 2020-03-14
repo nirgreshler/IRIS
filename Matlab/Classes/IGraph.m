@@ -67,13 +67,20 @@ classdef IGraph < handle
             for iClus = 1:nClusters
                 clIdx = clusters(iClus);
                 % get vert in this cluster
-                vertIdxInClus = find(BG.Nodes.cluster == clIdx);
-                dist = BG.distances(vertIdxInClus, vertIdxInClus);
-                for i = 1:length(vertIdxInClus)
-                    for j = i+1:length(vertIdxInClus)
-                        ee = BG.findedge(vertIdxInClus(i), vertIdxInClus(j));
+                vertIdxInBridgeClus = find(BG.Nodes.cluster == clIdx);
+                vertIdInClus = BG.Nodes.id(vertIdxInBridgeClus);
+                
+                % Build a graph of cluster
+                nodesInClusterIdx = find(G.graph.Nodes.cluster == clIdx);
+                clusterG = G.graph.subgraph(nodesInClusterIdx);
+                vertIdxInClus = arrayfun(@(x) find(clusterG.Nodes.id == x), vertIdInClus);
+                
+                dist = clusterG.distances(vertIdxInClus, vertIdxInClus);
+                for i = 1:length(vertIdxInBridgeClus)
+                    for j = i+1:length(vertIdxInBridgeClus)
+                        ee = BG.findedge(vertIdxInBridgeClus(i), vertIdxInBridgeClus(j));
                         if ee == 0
-                            edgeTable = table([vertIdxInClus(i), vertIdxInClus(j)], 1, 1, 0, 0,...
+                            edgeTable = table([vertIdxInBridgeClus(i), vertIdxInBridgeClus(j)], 1, 1, 0, 0,...
                                 dist(i,j), 1, ...
                                 'VariableName', BG.Edges.Properties.VariableNames);
                             BG = BG.addedge(edgeTable);
