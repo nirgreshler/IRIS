@@ -4,6 +4,7 @@ clc
 clear
 rng(1)
 addpath(genpath(pwd))
+RUN_ORIGINAL = true;
 
 %% Path settings
 define_path;
@@ -56,11 +57,15 @@ cmd = {'wsl', search_path, file_to_read, ...
     file_to_write, num2str(G.num_vertices), '0'};
 
 % run original
-tic
-status = system(strjoin(cmd));
-runtime_original = toc;
-if status
-    error('Failed to run original');
+if RUN_ORIGINAL
+    tic
+    status = system(strjoin(cmd));
+    runtime_original = toc;
+    if status
+        error('Failed to run original');
+    end
+else
+    runtime_original = 234;
 end
 
 % run bridge
