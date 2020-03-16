@@ -24,8 +24,10 @@ classdef IGraph < handle
                 EndNodes = [edge.source+1, edge.target+1];
                 EndNodes = table(EndNodes);
                 virtual = zeros(size(EndNodes, 1), 1);
-                virutal = table(virtual);
-                g.graph = graph([EndNodes, edge(:, 3:end), virutal], [vertex, conf(:, 2:end), cluster]);
+                virutalEdges = table(virtual);
+                virtual = zeros(size(conf, 1), 1);
+                virutalNodes = table(virtual);
+                g.graph = graph([EndNodes, edge(:, 3:end), virutalEdges], [vertex, conf(:, 2:end), cluster, virutalNodes]);
             elseif isa(filepath, 'graph')
                 g.graph = filepath;
             end
@@ -35,7 +37,19 @@ classdef IGraph < handle
             nv = size(g.graph.Nodes, 1);
         end
         
-        function BG = build_bridge_graph(G)
+        function idx = id2idx(G, ids)
+            idx = arrayfun(@(x) find(G.graph.Nodes.id == x), ids);
+        end
+        
+        function id = idx2id(G, idx)
+            id = G.graph.Nodes.id(idx);
+        end
+        
+        function BG = build_bridge_graph(G, addVirtVert)
+            
+            if nargin == 1
+                addVirtVert = true;
+            end
             
             clusters = unique(G.graph.Nodes.cluster);
             
@@ -51,7 +65,7 @@ classdef IGraph < handle
                 vertInClus = G.graph.Nodes(G.graph.Nodes.cluster == clIdx, :);
                 
                 for vI = 1:size(vertInClus, 1)
-                    vertNeighbors = G.graph.Nodes(G.graph.neighbors(vertInClus.id(vI) + 1), :);
+                    vertNeighbors = G.graph.Nodes(G.graph.neighbors(G.id2idx(vertInClus.id(vI))), :);
                     vertNeighborsInDiffClust = vertNeighbors(vertNeighbors.cluster ~= clIdx, :);
                     if size(vertNeighborsInDiffClust, 1) > 0 || vertInClus.id(vI) == 0 % add the first vertex
                         bridgeNodeIds = [bridgeNodeIds vertInClus.id(vI)];
@@ -61,14 +75,22 @@ classdef IGraph < handle
             
             % Build the bridge graph, with all edges of bridges (between and within
             % clusters)
-            BG = G.graph.subgraph(bridgeNodeIds + 1);
+            BG = G.graph.subgraph(G.id2idx(bridgeNodeIds));
             A = BG.adjacency;
             
             % Add virtual edges between bridge vert. within clusters
-            ptsPerCluster = hist(BG.Nodes.cluster);
-            maxVirtEdges = sum(ptsPerCluster.^2);
+            ptsPerCluster = histcounts(BG.Nodes.cluster, nClusters);
+            maxVirtEdges = 2 * sum((ptsPerCluster .* (ptsPerCluster - 1))/2);
+            maxVirtVerts = sum((ptsPerCluster .* (ptsPerCluster - 1))/2);
             vEdgesArray = zeros(maxVirtEdges, 8);
+            vVertsArray = cell(maxVirtVerts, 8); % TODO
             vEIdx = 1;
+            vVIdx = 1;
+            nextVertId = max(G.graph.Nodes.id) + 1; % generate new unique id
+            nextVertIdxInBridgeGraph = BG.numnodes() + 1;
+            
+%             addVirtEdgesIds = cell(G.graph.numnodes(), 1);
+%             addedVirtVertIds = [];
             for iClus = 1:nClusters
                 clIdx = clusters(iClus);
                 % get vert in this cluster
@@ -78,28 +100,74 @@ classdef IGraph < handle
                 % Build a graph of cluster
                 nodesInClusterIdx = find(G.graph.Nodes.cluster == clIdx);
                 clusterG = G.graph.subgraph(nodesInClusterIdx);
+                % assert(length(unique(clusterG.conncomp)) == 1);
                 vertIdxInClus = arrayfun(@(x) find(clusterG.Nodes.id == x), vertIdInClus);
                 
-                dist = clusterG.distances(vertIdxInClus, vertIdxInClus);
+                % dist = clusterG.distances(vertIdxInClus, vertIdxInClus);
+                
                 for i = 1:length(vertIdxInBridgeClus)
                     for j = i+1:length(vertIdxInBridgeClus)
                         % ee = BG.findedge(vertIdxInBridgeClus(i), vertIdxInBridgeClus(j));
                         ee = A(vertIdxInBridgeClus(i), vertIdxInBridgeClus(j));
                         if full(ee) == 0
-                            vEdgesArray(vEIdx, :) = [vertIdxInBridgeClus(i), vertIdxInBridgeClus(j), 1, 1, 0, 0,...
-                                dist(i,j), 1];
-                            vEIdx = vEIdx + 1;
+                            % there is not an edge between the bridge nodes
+                            [P, d] = clusterG.shortestpath(vertIdxInClus(i), vertIdxInClus(j));
+                            if isempty(P)
+                                % if no path exist, ignore it
+                                continue;
+                            end
+                            innerPathIdx = P(2:end-1);
+                            assert(~isempty(innerPathIdx));
+                            innerPathId = clusterG.Nodes.id(innerPathIdx);
+                            tic
+                            inspectPtsId = calc_coverage(clusterG, innerPathId) - 1;
+                            time_vis = toc;
+                            if isempty(inspectPtsId) || ~addVirtVert
+                                % inner path does not add coverage, just
+                                % add one virtual edge
+                                vEdgesArray(vEIdx, :) = [vertIdxInBridgeClus(i), vertIdxInBridgeClus(j), 1, 1, 0, 0,...
+                                    d, 1];
+                                vEIdx = vEIdx + 1;
+                            else   
+                                % inner path adds coverage, add one virtual
+                                % vertex and two virutal edges
+                                for pI = 1:length(P)
+                                    vEdgesArray(vEIdx, :) = [vertIdxInBridgeClus(i), nextVertIdxInBridgeGraph, 1, 1, 0, 0,...
+                                        d/2, 1];
+                                    vEIdx = vEIdx + 1;
+                                    vEdgesArray(vEIdx, :) = [nextVertIdxInBridgeGraph, vertIdxInBridgeClus(j), 1, 1, 0, 0,...
+                                        d/2, 1];
+                                    vEIdx = vEIdx + 1;
+                                    
+                                    % Add virtual vertex
+                                    new_conf = [clusterG.Nodes.x1(innerPathIdx(1)), ...
+                                        clusterG.Nodes.x2(innerPathIdx(1))]; % TODO
+                                    
+                                    vVertsArray(vVIdx, :) = [nextVertId, 0, time_vis, {inspectPtsId}, new_conf(1), new_conf(2), clIdx, 1];
+                                    vVIdx = vVIdx + 1;
+                                    nextVertId = nextVertId + 1;
+                                    nextVertIdxInBridgeGraph = nextVertIdxInBridgeGraph + 1;
+                                end
+                            end
                         end
                     end
                 end
             end
             
             % remove unused rows
-            vEdgesArray = vEdgesArray(1:vEIdx-1, :); 
+            vEdgesArray = vEdgesArray(1:vEIdx-1, :);
+            vVertsArray = vVertsArray(1:vVIdx-1, :); 
+            
+            % create and add tables
             edgeTable = table([vEdgesArray(:, 1), vEdgesArray(:, 2)], ...
                 vEdgesArray(:, 3), vEdgesArray(:, 4), vEdgesArray(:, 5), ...
                 vEdgesArray(:, 6), vEdgesArray(:, 7), vEdgesArray(:, 8), ...
                 'VariableName', BG.Edges.Properties.VariableNames);
+            vertTable = table(cell2mat(vVertsArray(:, 1)), cell2mat(vVertsArray(:, 2)), ...
+                cell2mat(vVertsArray(:, 3)), vVertsArray(:, 4), cell2mat(vVertsArray(:, 5)), ...
+                cell2mat(vVertsArray(:, 6)), cell2mat(vVertsArray(:, 7)), cell2mat(vVertsArray(:, 8)), ...
+                'VariableName', BG.Nodes.Properties.VariableNames);
+            BG = BG.addnode(vertTable);
             BG = BG.addedge(edgeTable);
             
             % Reorder nodes so that id=0 is first

@@ -10,7 +10,7 @@ RUN_ORIGINAL = true;
 define_path;
 
 %% Environment settings
-num_rooms = 16;
+num_rooms = 9;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
 % env_name = 'crisp_100';
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
@@ -22,7 +22,7 @@ params.plotEdges = false;
 %% Clustering settings
 clusteringMethod = 'spectral'; % 'kmeans' / 'spectral' / 'inspection'
 params.maxClusters = 20;
-params.minClusters = 4;
+params.minClusters = 2;
 % create clustering object
 clustering = Clustering(clusteringMethod, params);
 
@@ -32,6 +32,9 @@ initial_eps = '0.8';
 tightening_rate = '0';
 method = '0';
 
+%% Algorithm settings
+use_virtual_vertices = true;
+
 %% Create the graphs
 original_graph_path = fullfile(base_name, env_name);
 bridge_graph_path = fullfile(base_name, [env_name '_bridge']);
@@ -39,7 +42,7 @@ bridge_graph_path = fullfile(base_name, [env_name '_bridge']);
 G = IGraph(original_graph_path, clustering);
 % build bridge graph and write to file
 tic
-BG = G.build_bridge_graph();
+BG = G.build_bridge_graph(use_virtual_vertices);
 build_bridge_time = toc;
 BG.write_graph(bridge_graph_path);
 
@@ -108,10 +111,10 @@ scatter(inspectionPoints(cov_set, 1), inspectionPoints(cov_set, 2), 'og');
 scatter(inspectionPoints(cov_set_bridge, 1), inspectionPoints(cov_set_bridge, 2), 'xr');
 % add covergae to legend
 addToLegend(1).DisplayName = [addToLegend(1).DisplayName ' (' ...
-    num2str(roundn(length(cov_set)/size(inspectionPoints, 1),-1)*100) '% Coverage)'];
+    num2str(roundn(length(cov_set)/size(inspectionPoints, 1),-2)*100) '% Coverage)'];
 
 addToLegend(2).DisplayName = [addToLegend(2).DisplayName ' (' ...
-    num2str(roundn(length(cov_set_bridge)/size(inspectionPoints, 1),-1)*100) '% Coverage)'];
+    num2str(roundn(length(cov_set_bridge)/size(inspectionPoints, 1),-2)*100) '% Coverage)'];
 
 legend(addToLegend, 'Location', 'BestOutside');
 
