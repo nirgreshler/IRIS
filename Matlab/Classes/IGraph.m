@@ -131,23 +131,21 @@ classdef IGraph < handle
                             else   
                                 % inner path adds coverage, add one virtual
                                 % vertex and two virutal edges
-                                for pI = 1:length(P)
-                                    vEdgesArray(vEIdx, :) = [vertIdxInBridgeClus(i), nextVertIdxInBridgeGraph, 1, 1, 0, 0,...
-                                        d/2, 1];
-                                    vEIdx = vEIdx + 1;
-                                    vEdgesArray(vEIdx, :) = [nextVertIdxInBridgeGraph, vertIdxInBridgeClus(j), 1, 1, 0, 0,...
-                                        d/2, 1];
-                                    vEIdx = vEIdx + 1;
-                                    
-                                    % Add virtual vertex
-                                    new_conf = [clusterG.Nodes.x1(innerPathIdx(1)), ...
-                                        clusterG.Nodes.x2(innerPathIdx(1))]; % TODO
-                                    
-                                    vVertsArray(vVIdx, :) = [nextVertId, 0, time_vis, {inspectPtsId}, new_conf(1), new_conf(2), clIdx, 1];
-                                    vVIdx = vVIdx + 1;
-                                    nextVertId = nextVertId + 1;
-                                    nextVertIdxInBridgeGraph = nextVertIdxInBridgeGraph + 1;
-                                end
+                                vEdgesArray(vEIdx, :) = [vertIdxInBridgeClus(i), nextVertIdxInBridgeGraph, 1, 1, 0, 0,...
+                                    d/2, 1];
+                                vEIdx = vEIdx + 1;
+                                vEdgesArray(vEIdx, :) = [nextVertIdxInBridgeGraph, vertIdxInBridgeClus(j), 1, 1, 0, 0,...
+                                    d/2, 1];
+                                vEIdx = vEIdx + 1;
+                                
+                                % Add virtual vertex
+                                new_conf = [clusterG.Nodes.x1(innerPathIdx(1)), ...
+                                    clusterG.Nodes.x2(innerPathIdx(1))]; % TODO
+                                
+                                vVertsArray(vVIdx, :) = [nextVertId, 0, time_vis, {inspectPtsId}, new_conf(1), new_conf(2), clIdx, 1];
+                                vVIdx = vVIdx + 1;
+                                nextVertId = nextVertId + 1;
+                                nextVertIdxInBridgeGraph = nextVertIdxInBridgeGraph + 1;
                             end
                         end
                     end

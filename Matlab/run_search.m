@@ -10,7 +10,7 @@ RUN_ORIGINAL = true;
 define_path;
 
 %% Environment settings
-num_rooms = 9;
+num_rooms = 16;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
 % env_name = 'crisp_100';
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
@@ -33,7 +33,7 @@ tightening_rate = '0';
 method = '0';
 
 %% Algorithm settings
-use_virtual_vertices = true;
+use_virtual_vertices = false;
 
 %% Create the graphs
 original_graph_path = fullfile(base_name, env_name);
