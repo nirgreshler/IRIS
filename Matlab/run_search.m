@@ -12,7 +12,7 @@ define_path;
 %% Environment settings
 num_rooms = 9;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
-env_name = 'planar_1000';
+env_name = 'planar_5000';
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
 
 %% Plotting settings
@@ -123,7 +123,7 @@ if contains(env_name, 'syn') || contains(env_name, 'drone')
     scatter(inspectionPoints(cov_set_bridge, 1), inspectionPoints(cov_set_bridge, 2), 'xr');
     % add covergae to legend
     addToLegend(1).DisplayName = [addToLegend(1).DisplayName ' (' ...
-        num2str() '% Coverage)'];
+        num2str(roundn(length(cov_set)/size(inspectionPoints, 1),-3)*100) '% Coverage)'];
     
     addToLegend(2).DisplayName = [addToLegend(2).DisplayName ' (' ...
         num2str(roundn(length(cov_set_bridge)/size(inspectionPoints, 1),-3)*100) '% Coverage)'];
@@ -134,3 +134,7 @@ end
 disp(['Original search runtime: ' num2str(runtime_original)]);
 disp(['Bridge graph build time: ' num2str(build_bridge_time)]);
 disp(['Bridge search runtime: ' num2str(runtime_bridge)]);
+fprintf('Original Graph Size: %d points, %d edges\n', size(G.graph.Nodes,1), size(G.graph.Edges,1))
+fprintf('Bridge Graph Size: %d points, %d edges\n', size(BG.graph.Nodes,1), size(BG.graph.Edges,1))
+fprintf('Original Covered: %d points\n', length(cov_set))
+fprintf('Bridge Covered: %d points\n', length(cov_set_bridge))
