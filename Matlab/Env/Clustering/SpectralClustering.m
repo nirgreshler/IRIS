@@ -10,7 +10,7 @@ if ~isfield(params, 'minClusters')
     params.minClusters = 2;
 end
 if ~isfield(params, 'normalizeM')
-    params.normalizeM = true;
+    params.normalizeM = false;
 end
 if ~isfield(params, 'laplacianType')
     params.laplacianType = 'normal';

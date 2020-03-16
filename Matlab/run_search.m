@@ -22,7 +22,7 @@ params.plotEdges = false;
 %% Clustering settings
 clusteringMethod = 'spectral'; % 'kmeans' / 'spectral' / 'inspection'
 params.maxClusters = 20;
-params.minClusters = 4;
+params.minClusters = 2;
 % create clustering object
 clustering = Clustering(clusteringMethod, params);
 
@@ -32,6 +32,9 @@ initial_eps = '0.8';
 tightening_rate = '0';
 method = '0';
 
+%% Algorithm settings
+use_virtual_vertices = false;
+
 %% Create the graphs
 original_graph_path = fullfile(base_name, env_name);
 bridge_graph_path = fullfile(base_name, [env_name '_bridge']);
@@ -39,7 +42,7 @@ bridge_graph_path = fullfile(base_name, [env_name '_bridge']);
 G = IGraph(original_graph_path, clustering);
 % build bridge graph and write to file
 tic
-BG = G.build_bridge_graph();
+BG = G.build_bridge_graph(use_virtual_vertices);
 build_bridge_time = toc;
 BG.write_graph(bridge_graph_path);
 
@@ -127,7 +130,6 @@ if contains(env_name, 'syn') || contains(env_name, 'drone')
     
     legend(addToLegend, 'Location', 'BestOutside');
 end
-
 %% Show runtime & results
 disp(['Original search runtime: ' num2str(runtime_original)]);
 disp(['Bridge graph build time: ' num2str(build_bridge_time)]);
