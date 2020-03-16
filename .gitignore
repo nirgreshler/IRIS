@@ -31,7 +31,7 @@ build*/
 debug/
 .vscode/
 *.asv
-Matlab/Graphs
+Matlab/Graphs/
 *.sh
 *.m~
 *.asv

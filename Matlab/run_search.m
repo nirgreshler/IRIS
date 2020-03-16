@@ -10,9 +10,9 @@ RUN_ORIGINAL = true;
 define_path;
 
 %% Environment settings
-num_rooms = 16;
+num_rooms = 9;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
-% env_name = 'crisp_100';
+env_name = 'planar_1000';
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
 
 %% Plotting settings
@@ -44,10 +44,16 @@ build_bridge_time = toc;
 BG.write_graph(bridge_graph_path);
 
 %% Show the graphs
-PlotEnvironment(params, G, inspectionPoints, obstacles, 'Original Clustered Graph');
-scatter(BG.graph.Nodes.x1, BG.graph.Nodes.x2, 'om', 'Linewidth', 1);
-
-PlotEnvironment(params, BG, inspectionPoints, obstacles, 'Bridge Graph');
+if contains(env_name, 'syn')
+    PlotEnvironment(params, G, inspectionPoints, obstacles, 'Original Clustered Graph');
+    scatter(BG.graph.Nodes.x1, BG.graph.Nodes.x2, 'om', 'Linewidth', 1);
+    PlotEnvironment(params, BG, inspectionPoints, obstacles, 'Bridge Graph');
+elseif contains(env_name, 'drone')
+    inspectionPoints = read_bridge_model();
+    PlotBridgeEnvironment(params, G, inspectionPoints, 'Original Clustered Graph');
+    plot3(BG.graph.Nodes.x1, BG.graph.Nodes.x2,BG.graph.Nodes.x3,  'om', 'Linewidth', 1);
+    PlotBridgeEnvironment(params, BG, inspectionPoints, 'Bridge Graph');
+end
 
 %% Run the search in WSL
 file_to_read = [base_name_in_wsl '/' env_name];
@@ -85,37 +91,44 @@ res_file_bridge = [base_name '\' env_name '_bridge_result'];
 
 pathId = read_result(res_file);
 pathIdBridge = read_result(res_file_bridge);
-
-%% Show path
-PlotEnvironment(params, G, inspectionPoints, obstacles, 'Paths found by IRIS');
-scatter(BG.graph.Nodes.x1, BG.graph.Nodes.x2, 'om', 'Linewidth', 1);
-% show the original path
-h = show_path(G, pathId, 'go-');
-h.DisplayName = 'Original Path';
-addToLegend = h;
-
-% show the bridge path
 realPathId = extract_real_path(G, BG, pathIdBridge);
-h = show_path(G, realPathId, 'rx-.');
-h.DisplayName = 'Path Using Bridge Graph';
-addToLegend = [addToLegend h];
-
 %% Calc coverage
 cov_set = calc_coverage(G, pathId);
 cov_set_bridge = calc_coverage(G, realPathId);
-% show coverage
-scatter(inspectionPoints(cov_set, 1), inspectionPoints(cov_set, 2), 'og');
-scatter(inspectionPoints(cov_set_bridge, 1), inspectionPoints(cov_set_bridge, 2), 'xr');
-% add covergae to legend
-addToLegend(1).DisplayName = [addToLegend(1).DisplayName ' (' ...
-    num2str(roundn(length(cov_set)/size(inspectionPoints, 1),-1)*100) '% Coverage)'];
+%% Show path
+if contains(env_name, 'syn') || contains(env_name, 'drone')
+    if contains(env_name, 'syn')
+        PlotEnvironment(params, G, inspectionPoints, obstacles, 'Paths found by IRIS');
+        scatter(BG.graph.Nodes.x1, BG.graph.Nodes.x2, 'om', 'Linewidth', 1);
+    elseif contains(env_name, 'drone')
+        PlotBridgeEnvironment(params, G, inspectionPoints, 'Paths found by IRIS');
+        plot3(BG.graph.Nodes.x1, BG.graph.Nodes.x2, BG.graph.Nodes.x3, 'om', 'Linewidth', 1);
+    end
+    
+    % show the original path
+    h = show_path(G, pathId, 'go-');
+    h.DisplayName = 'Original Path';
+    addToLegend = h;
+    
+    % show the bridge path 
+    h = show_path(G, realPathId, 'rx-.');
+    h.DisplayName = 'Path Using Bridge Graph';
+    addToLegend = [addToLegend h];
+    
+    % show coverage
+    scatter(inspectionPoints(cov_set, 1), inspectionPoints(cov_set, 2), 'og');
+    scatter(inspectionPoints(cov_set_bridge, 1), inspectionPoints(cov_set_bridge, 2), 'xr');
+    % add covergae to legend
+    addToLegend(1).DisplayName = [addToLegend(1).DisplayName ' (' ...
+        num2str() '% Coverage)'];
+    
+    addToLegend(2).DisplayName = [addToLegend(2).DisplayName ' (' ...
+        num2str(roundn(length(cov_set_bridge)/size(inspectionPoints, 1),-3)*100) '% Coverage)'];
+    
+    legend(addToLegend, 'Location', 'BestOutside');
+end
 
-addToLegend(2).DisplayName = [addToLegend(2).DisplayName ' (' ...
-    num2str(roundn(length(cov_set_bridge)/size(inspectionPoints, 1),-1)*100) '% Coverage)'];
-
-legend(addToLegend, 'Location', 'BestOutside');
-
-%% Show runtime
+%% Show runtime & results
 disp(['Original search runtime: ' num2str(runtime_original)]);
 disp(['Bridge graph build time: ' num2str(build_bridge_time)]);
 disp(['Bridge search runtime: ' num2str(runtime_bridge)]);

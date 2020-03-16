@@ -1,37 +1,8 @@
-function PlotEnvironment(params, points, clusters, M, inspectionPoints, obstacles, plotTitle)
+function PlotBridgeEnvironment(params, G, inspectionPoints, plotTitle)
 
-if nargin == 5
-    if isa(points, 'IGraph')
-        G = points.graph;
-    elseif isa(points, 'graph')
-        G = points;
-    end
-    
-    plotTitle = inspectionPoints;
-    obstacles = M;
-    inspectionPoints = clusters;
-    
-    points = [G.Nodes.x1, G.Nodes.x2];
-    clusters = G.Nodes.cluster;
-    M = G.adjacency;
-    % mark virtual edges
-    if params.plotEdges
-        for i = 1:size(M, 1)
-            for j = i+1:size(M, 2)
-                if M(i, j)
-                    is_v = G.Edges.virtual(G.findedge(i, j));
-                    if is_v
-                        M(i, j) = 0.5;
-                    end
-                end
-            end
-        end
-    end
+if ~exist('plotTitle', 'var') || isempty(plotTitle)
+    plotTitle = 'Bridge Environment';
 end
-
-graphHandles = [];
-
-homeSize = params.homeSize;
 if ~isfield(params, 'plotEdges')
     params.plotEdges = false;
 end
@@ -41,10 +12,10 @@ end
 if ~isfield(params, 'showText')
     params.showText = false;
 end
-
-if ~exist('plotTitle', 'var') || isempty(plotTitle)
-    plotTitle = 'Environment';
-end
+points = [G.graph.Nodes.x1, G.graph.Nodes.x2, G.graph.Nodes.x3];
+clusters = G.graph.Nodes.cluster;
+    
+graphHandles = [];
 
 nPoints = size(points,1);
 if isempty(clusters)
@@ -53,48 +24,27 @@ end
 clusterIdcs = unique(clusters);
 nClusters = length(clusterIdcs);
 plotTitle = [plotTitle, ' (', num2str(nClusters), ' Clusters)'];
-f = figure; hold all; axis equal
-
-% outside walls
-plot([0 homeSize], [0 0], '-k', 'LineWidth', 1)
-plot([homeSize homeSize], [0 homeSize], '-k', 'LineWidth', 1)
-plot([0 homeSize], [homeSize homeSize], '-k', 'LineWidth', 1)
-plot([0 0], [0 homeSize], '-k', 'LineWidth', 1)
+f = figure; hold all; 
+axis equal
 
 % inspection points
-plot(inspectionPoints(:,1), inspectionPoints(:,2), 'ob')
-
-% obstacles
-for k = 1:numel(obstacles)
-    plot(obstacles{k}(:,1), obstacles{k}(:,2), '.k', 'LineWidth', 1)
-end
-
-if params.plotEdges
-    % edges
-    for k = 1:nPoints
-        for m = k+1:nPoints
-            if M(k,m) > 0
-                p1 = points(k,:);
-                p2 = points(m,:);
-                if M(k, m) == 0.5
-                    line_style = ':k';
-                else
-                    line_style = '-k';
-                end
-                graphHandles = [graphHandles plot([p1(1) p2(1)], [p1(2) p2(2)], line_style)];
-            end
-        end
-    end
-end
+plot3(inspectionPoints(:,1), inspectionPoints(:,2), inspectionPoints(:,3), 'ob')
 
 % points
 colorOrder = linspecer(nClusters);
 nColors = size(colorOrder,1);
 for k = 1:nClusters
     color = colorOrder(mod(k-1,nColors)+1,:);
-    pH = plot(points(clusters == clusterIdcs(k),1), points(clusters == clusterIdcs(k),2), '.', 'Color', color, 'MarkerSize', 15, 'LineWidth', 3);
+    pH = plot3(points(clusters == clusterIdcs(k),1), points(clusters == clusterIdcs(k),2), points(clusters == clusterIdcs(k),3), '.', 'Color', color, 'MarkerSize', 15, 'LineWidth', 3);
     pH.ButtonDownFcn = {@showInsPoints, points};
     graphHandles = [graphHandles pH];
+end
+
+colorOrder = linspecer(nClusters);
+for k = 1:nClusters
+    idcs = G.graph.Nodes.cluster == k;
+    color = colorOrder(k,:);
+    plot3(G.graph.Nodes.x1(idcs), G.graph.Nodes.x2(idcs), G.graph.Nodes.x3(idcs), '.', 'Color', color, 'MarkerSize', 15, 'LineWidth', 3);
 end
 
 if params.showText
@@ -106,6 +56,7 @@ end
 f.ButtonDownFcn = {@(f, ~, h) toggleGraph(f, graphHandles), graphHandles};
 
 title(plotTitle)
+xlabel('x'); ylabel('y'); zlabel('z');
 
 if params.inspectInspection
     disp('Right click to exit')
@@ -125,6 +76,7 @@ if params.inspectInspection
         hInspected = plot(pointToCheck(1), pointToCheck(2), 'ok', 'LineWidth', 2);
     end
 end
+
 
     function toggleGraph(f, h)
         if strcmp(h(1).Visible, 'on')
@@ -148,4 +100,6 @@ end
         hInspected = plot(pointToCheck(1), pointToCheck(2), 'ok', 'LineWidth', 2);
     end
 
+
 end
+

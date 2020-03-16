@@ -3,7 +3,7 @@ close all
 clc
 set(0,'DefaultFigureWindowStyle','docked')
 
-env_name = 'drone_1000';
+env_name = 'planar_1000';
 addpath(genpath(pwd))
 
 base_name = fullfile(pwd, 'Graphs');
@@ -26,7 +26,7 @@ for k = 1:nPoints
 end
 params.normalizeM = false;
 params.minClusters = 1;
-params.maxClusters = 500;
+params.maxClusters = 50;
 
 params.laplacianType = 'normal';
 clusters = SpectralClustering(params, points,M);
