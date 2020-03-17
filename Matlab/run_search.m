@@ -134,3 +134,7 @@ end
 disp(['Original search runtime: ' num2str(runtime_original)]);
 disp(['Bridge graph build time: ' num2str(build_bridge_time)]);
 disp(['Bridge search runtime: ' num2str(runtime_bridge)]);
+fprintf('Original Graph Size: %d points, %d edges\n', size(G.graph.Nodes,1), size(G.graph.Edges,1))
+fprintf('Bridge Graph Size: %d points, %d edges\n', size(BG.graph.Nodes,1), size(BG.graph.Edges,1))
+fprintf('Original Covered: %d points\n', length(cov_set))
+fprintf('Bridge Covered: %d points\n', length(cov_set_bridge))
