@@ -204,7 +204,8 @@ classdef IGraph < handle
             for k = 1:nPoints
                 fprintf(fId, '%d %f %f ', k-1, G.Nodes.time_vis(k), G.Nodes.time_build(k));
                 pointsInSight = G.Nodes.vis{k};
-                fprintf(fId, strrep(strrep(num2str(pointsInSight(~isnan(pointsInSight))), '   ', ' '), '  ', ' '));
+                pointsInSight = pointsInSight(~isnan(pointsInSight));
+                fprintf(fId, strjoin(arrayfun(@(x) num2str(x), pointsInSight, 'UniformOutput', false), ' '));
                 fprintf(fId, '\n');
             end
             fclose(fId);
