@@ -12,7 +12,7 @@ define_path;
 %% Environment settings
 num_rooms = 9;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
-env_name = 'crisp_100';
+% env_name = 'crisp_100';
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
 
 %% Plotting settings
@@ -95,9 +95,10 @@ res_file_bridge = [base_name '\' env_name '_bridge_result'];
 pathId = read_result(res_file);
 pathIdBridge = read_result(res_file_bridge);
 realPathId = extract_real_path(G, BG, pathIdBridge);
-%% Calc coverage
+%% Calc coverage & cost
 cov_set = calc_coverage(G, pathId);
 cov_set_bridge = calc_coverage(G, realPathId);
+cost_oirg = calc_cost(G, pathId);
 %% Show path
 if contains(env_name, 'syn') || contains(env_name, 'drone')
     if contains(env_name, 'syn')
