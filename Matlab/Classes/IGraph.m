@@ -18,6 +18,11 @@ classdef IGraph < handle
                 % Perform clustering
                 if nargin > 1
                     cluster = clustering.cluster(table2array(conf(:, 2:3)), g.M);
+                    % make the clusters serial 1..n
+                    uClusters = unique(cluster);
+                    for i = 1:length(uClusters)
+                        cluster(cluster == uClusters(i)) = i;
+                    end
                     cluster = table(cluster);
                 end
                 
@@ -45,15 +50,21 @@ classdef IGraph < handle
             id = G.graph.Nodes.id(idx);
         end
         
-        function BG = build_bridge_graph(G, addVirtVert)
+        function BG = build_bridge_graph(G, addVirtVert, MIN_CONN)
             
             if nargin == 1
                 addVirtVert = true;
+                MIN_CONN = inf;
+            elseif nargin == 2
+                MIN_CONN = inf;
             end
             
             clusters = unique(G.graph.Nodes.cluster);
             
             nClusters = size(clusters, 1);
+            
+            % limit number of bridge nodes
+            connected_clusters = zeros(nClusters, nClusters);
             
             % For each cluster, find the bridge vertices
             bridgeNodeIds = [];
@@ -68,7 +79,12 @@ classdef IGraph < handle
                     vertNeighbors = G.graph.Nodes(G.graph.neighbors(G.id2idx(vertInClus.id(vI))), :);
                     vertNeighborsInDiffClust = vertNeighbors(vertNeighbors.cluster ~= clIdx, :);
                     if size(vertNeighborsInDiffClust, 1) > 0 || vertInClus.id(vI) == 0 % add the first vertex
-                        bridgeNodeIds = [bridgeNodeIds vertInClus.id(vI)];
+                        % only add bridge nodes that add new connection
+                        if any(connected_clusters(clIdx, vertNeighborsInDiffClust.cluster) < MIN_CONN)
+                            bridgeNodeIds = [bridgeNodeIds vertInClus.id(vI)];
+                            connected_clusters(clIdx, vertNeighborsInDiffClust.cluster) = ...
+                                connected_clusters(clIdx, vertNeighborsInDiffClust.cluster) + 1;
+                        end
                     end
                 end
             end
@@ -176,12 +192,12 @@ classdef IGraph < handle
             BG = IGraph(BG);
         end
         
-        function [pathId, cost, runtime] = run_search(G, cmd)
+        function [pathId, runtime] = run_search(G, cmd)
             tic
             status = system(strjoin(cmd));
             runtime = toc;
             if status
-                error('Failed to run original');
+                error('Failed to run');
             end
             
             res_file = [cmd{3} '_result'];
@@ -190,7 +206,6 @@ classdef IGraph < handle
             sp{1} = [sp{1} ':'];
             res_file = strjoin(sp, '\');
             pathId = read_result(res_file);
-            cost = 0;
         end
         
         function write_graph(G, pathToWrite)
