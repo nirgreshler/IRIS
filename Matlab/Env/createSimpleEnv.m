@@ -1,20 +1,20 @@
 clear
 close all
 clc
-nSqrRooms = 2;
-homeSize = 8;%nSqrRooms^2;
+nSqrRooms = 3;
+homeSize = 9;%nSqrRooms^2;
 nRooms = nSqrRooms^2;
 roomSize = homeSize/nSqrRooms;
 envGrid = 0.01;
 doorSize = 0.25;
-nPoints = 200;
+nPoints = 1500;
 nInspectionPoints = 400;
 connectionRadius = 0.8;
-sightRadius = roomSize*sqrt(2)/2;
+sightRadius = roomSize*sqrt(2) / 2;
 samplingMethod = 'RRT'; % 'Uniform' / 'Sobol' / 'RRT'
 fol = fileparts(mfilename('fullpath'));
 rng('shuffle')
-clusteringMethod = 'inspection';
+clusteringMethod = 'spectral';
 outputFolder = fullfile(fol, '..', 'Graphs', filesep);
 saveEnv = true;
 params.homeSize = homeSize;
@@ -23,6 +23,7 @@ params.sightRadius = sightRadius;
 params.doorSize = doorSize;
 params.nRooms = nRooms;
 params.maxClusters = 50;
+params.plotEdges = false;
 %% Create points
 inspectionPoints = GetInspectionPoints(homeSize, nInspectionPoints);
 [obstacles, doors] = GetObstacles(homeSize, nRooms, doorSize, envGrid);
@@ -35,7 +36,8 @@ switch samplingMethod
         sampler.Skip = skip;
         points = sampler.net(nPoints)*homeSize;
     case 'RRT'
-        eta = 0.5;
+        eta = connectionRadius;%0.5;
+        eta = connectionRadius;
         startPoint = [envGrid envGrid];
         points = startPoint;
         while size(points,1) < nPoints
@@ -69,12 +71,14 @@ M = BuildAdjcancyMatrix(points, obstacles, connectionRadius);
 %% Get inspection point for each point
 [pointsInSight, timeVisVec] = GetPointsInSight(params, points, inspectionPoints, obstacles);
 %% Clustering
-clusters = InspectionClustering(params, points, pointsInSight);
+params.minClusters = 1;
+params.maxClusters = 10;
+% clusters = InspectionClustering(params, points, pointsInSight);
 switch clusteringMethod
     case 'kmeans'
         clusters = KMeansClustering(params, points, params.nRooms);
     case 'spectral'
-        clusters = SpectralClustering(params, points, M, params.nRooms);
+        clusters = SpectralClustering(params, points, M);
     case 'inspection'
         params.unifyBlindPoints = true;
 %         params.lapalacianType = 'rw';

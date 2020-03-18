@@ -10,6 +10,7 @@ gScore(startIdx) = 0;
 fScore = inf*ones(nPoints,1);
 fScore(startIdx) = gScore(startIdx)+h(startPoint, goalPoint);
 pathFound = [];
+cost = [];
 parents = NaN(nPoints,3);
 
 counter = 0;

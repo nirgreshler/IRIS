@@ -10,7 +10,7 @@ if ~isfield(params, 'minClusters')
     params.minClusters = 2;
 end
 if ~isfield(params, 'normalizeM')
-    params.normalizeM = true;
+    params.normalizeM = false;
 end
 if ~isfield(params, 'laplacianType')
     params.laplacianType = 'normal';
@@ -29,9 +29,11 @@ switch params.laplacianType
 end
 [V,eigenMat] = eig(L);
 eigenValues = diag(eigenMat);
+firstValidEig = find(abs(eigenValues) > 1e-12, 1);
 if nargin < 4
     dEigens = diff(eigenValues);
-    [~, maxIdx] = max(dEigens(max(params.minClusters-1,1):params.maxClusters));
+    maxVal = max(dEigens(max(params.minClusters-1,1):min(params.maxClusters, length(dEigens))));
+    maxIdx = find(dEigens == maxVal);
     nClusters = maxIdx+1;
 end
 kSmallestEigenvalues = eigenValues(1:nClusters+1);
