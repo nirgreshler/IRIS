@@ -37,6 +37,7 @@ switch samplingMethod
         points = sampler.net(nPoints)*homeSize;
     case 'RRT'
         eta = connectionRadius;%0.5;
+        eta = connectionRadius;
         startPoint = [envGrid envGrid];
         points = startPoint;
         while size(points,1) < nPoints
