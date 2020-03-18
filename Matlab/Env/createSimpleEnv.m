@@ -7,7 +7,7 @@ nRooms = nSqrRooms^2;
 roomSize = homeSize/nSqrRooms;
 envGrid = 0.01;
 doorSize = 0.25;
-nPoints = 500;
+nPoints = 1500;
 nInspectionPoints = 400;
 connectionRadius = 0.8;
 sightRadius = roomSize*sqrt(2) / 2;
@@ -36,7 +36,7 @@ switch samplingMethod
         sampler.Skip = skip;
         points = sampler.net(nPoints)*homeSize;
     case 'RRT'
-        eta = 0.5;
+        eta = connectionRadius;%0.5;
         startPoint = [envGrid envGrid];
         points = startPoint;
         while size(points,1) < nPoints
