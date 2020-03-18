@@ -176,6 +176,23 @@ classdef IGraph < handle
             BG = IGraph(BG);
         end
         
+        function [pathId, cost, runtime] = run_search(G, cmd)
+            tic
+            status = system(strjoin(cmd));
+            runtime = toc;
+            if status
+                error('Failed to run original');
+            end
+            
+            res_file = [cmd{3} '_result'];
+            sp = strsplit(res_file, '/');
+            sp = sp(3:end);
+            sp{1} = [sp{1} ':'];
+            res_file = strjoin(sp, '\');
+            pathId = read_result(res_file);
+            cost = 0;
+        end
+        
         function write_graph(G, pathToWrite)
             assert(isa(G, 'IGraph'));
             G = G.graph;
