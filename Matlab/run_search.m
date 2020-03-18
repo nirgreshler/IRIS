@@ -27,8 +27,8 @@ params.minClusters = 2;
 clustering = Clustering(clusteringMethod, params);
 
 %% IRIS settings
-initial_p = '0.8';
-initial_eps = '0.8';
+initial_p = '0.9';
+initial_eps = '0.5';
 tightening_rate = '0';
 method = '0';
 
@@ -65,35 +65,14 @@ cmd = {'wsl', search_path, file_to_read, ...
     initial_p, initial_eps, tightening_rate, method, ...
     file_to_write, num2str(G.num_vertices), '0'};
 
-% run original
-if RUN_ORIGINAL
-    tic
-    status = system(strjoin(cmd));
-    runtime_original = toc;
-    if status
-        error('Failed to run original');
-    end
-else
-    runtime_original = 234;
-end
+[pathId, cost, runtime_original] = G.run_search(cmd);
+cov_set = calc_coverage(G, pathId);
 
 % run bridge
 cmd{3} = [cmd{3} '_bridge'];
 cmd{8} = [cmd{8} '_bridge'];
 cmd{9} = num2str(BG.num_vertices());
-tic
-status = system(strjoin(cmd));
-runtime_bridge = toc;
-if status
-    error('Failed to run bridge');
-end
-
-%% Read results
-res_file = [base_name '\' env_name '_result'];
-res_file_bridge = [base_name '\' env_name '_bridge_result'];
-
-pathId = read_result(res_file);
-pathIdBridge = read_result(res_file_bridge);
+[pathIdBridge, cost, runtime_bridge] = BG.run_search(cmd);
 realPathId = extract_real_path(G, BG, pathIdBridge);
 %% Calc coverage & cost
 cov_set = calc_coverage(G, pathId);
