@@ -22,7 +22,7 @@ params.plotEdges = false;
 %% Clustering settings
 clusteringMethod = 'spectral'; % 'kmeans' / 'spectral' / 'inspection'
 params.maxClusters = 20;
-params.minClusters = 2;
+params.minClusters = 10;
 % create clustering object
 clustering = Clustering(clusteringMethod, params);
 
@@ -64,9 +64,13 @@ file_to_write = [base_name_in_wsl '/' env_name];
 cmd = {'wsl', search_path, file_to_read, ...
     initial_p, initial_eps, tightening_rate, method, ...
     file_to_write, num2str(G.num_vertices), '0'};
+% cmd = {'wsl', search_path, file_to_read, ...
+%     initial_p, initial_eps, tightening_rate, method, ...
+%     file_to_write, '100', '0'};
 
 [pathId, cost, runtime_original] = G.run_search(cmd);
 cov_set = calc_coverage(G, pathId);
+cost_orig = calc_cost(G, pathId);
 
 % run bridge
 cmd{3} = [cmd{3} '_bridge'];
@@ -74,10 +78,9 @@ cmd{8} = [cmd{8} '_bridge'];
 cmd{9} = num2str(BG.num_vertices());
 [pathIdBridge, cost, runtime_bridge] = BG.run_search(cmd);
 realPathId = extract_real_path(G, BG, pathIdBridge);
-%% Calc coverage & cost
-cov_set = calc_coverage(G, pathId);
 cov_set_bridge = calc_coverage(G, realPathId);
-cost_oirg = calc_cost(G, pathId);
+cost_bridge = calc_cost(G, realPathId);
+
 %% Show path
 if contains(env_name, 'syn') || contains(env_name, 'drone')
     if contains(env_name, 'syn')
@@ -118,3 +121,5 @@ fprintf('Original Graph Size: %d points, %d edges\n', size(G.graph.Nodes,1), siz
 fprintf('Bridge Graph Size: %d points, %d edges\n', size(BG.graph.Nodes,1), size(BG.graph.Edges,1))
 fprintf('Original Covered: %d points\n', length(cov_set))
 fprintf('Bridge Covered: %d points\n', length(cov_set_bridge))
+fprintf('Original Cost: %.2f\n', cost_orig)
+fprintf('Bridge Cost: %.2f\n', cost_bridge)

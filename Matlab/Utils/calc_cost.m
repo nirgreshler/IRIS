@@ -1,12 +1,12 @@
-function cov_set = calc_cost(G, pathId)
+function cost = calc_cost(G, pathId)
 
 if isa(G, 'IGraph')
     G = G.graph;
 end
 
-cov_set = [];
-for i = 1:length(pathId)
-    cov = G.Nodes.vis{G.Nodes.id == pathId(i)};
-    cov_set = [cov_set cov(~isnan(cov))];
+cost = 0;
+for i = 1:length(pathId)-1
+    edgeIdx = find((G.Edges.EndNodes(:,1)-1 == pathId(i) & G.Edges.EndNodes(:,2)-1 == pathId(i+1)) |...
+    (G.Edges.EndNodes(:,1)-1 == pathId(i+1) & G.Edges.EndNodes(:,2)-1 == pathId(i)));
+    cost = cost+G.Edges(edgeIdx,:).Weight;
 end
-cov_set = unique(cov_set) + 1;
