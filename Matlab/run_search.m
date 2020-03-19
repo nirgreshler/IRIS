@@ -4,7 +4,7 @@ clc
 clear
 rng(1)
 addpath(genpath(pwd))
-RUN_ORIGINAL = false;
+RUN_ORIGINAL = true;
 
 %% Path settings
 define_path;
@@ -12,7 +12,7 @@ define_path;
 %% Environment settings
 num_rooms = 9;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
-env_name = 'drone_500';
+% env_name = 'drone_1000_big';
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
 
 %% Plotting settings
@@ -22,13 +22,13 @@ params.plotEdges = false;
 %% Clustering settings
 clusteringMethod = 'spectral'; % 'kmeans' / 'spectral' / 'inspection'
 params.maxClusters = 20;
-params.minClusters = 4;
+params.minClusters = 2;
 % create clustering object
 clustering = Clustering(clusteringMethod, params);
 
 %% IRIS settings
-initial_p = '0.9';
-initial_eps = '0.8';
+initial_p = '0.8';
+initial_eps = '0.5';
 tightening_rate = '0';
 method = '0';
 
@@ -36,7 +36,7 @@ method = '0';
 USE_VIRTUAL_VERTICES = false;
 RUN_IRIS_IN_CLUSTERS = false;
 IRIS_IN_CLUSTER_COV_TH = 0.5;
-
+minNumBridges = inf;
 %% Create the graphs
 original_graph_path = fullfile(base_name, env_name);
 bridge_graph_path = fullfile(base_name, [env_name '_bridge']);
@@ -44,7 +44,7 @@ bridge_graph_path = fullfile(base_name, [env_name '_bridge']);
 G = IGraph(original_graph_path, clustering);
 % build bridge graph and write to file
 tic
-BG = G.build_bridge_graph(USE_VIRTUAL_VERTICES, 10);
+BG = G.build_bridge_graph(USE_VIRTUAL_VERTICES, minNumBridges);
 build_bridge_time = toc;
 BG.write_graph(bridge_graph_path);
 
@@ -63,7 +63,7 @@ elseif contains(env_name, 'drone')
     plot3(BG.graph.Nodes.x1, BG.graph.Nodes.x2,BG.graph.Nodes.x3,  'om', 'Linewidth', 1);
     PlotBridgeEnvironment(params, BG, inspectionPoints, 'Bridge Graph');
 end
-
+nClusters = length(unique(G.graph.Nodes.cluster));
 fprintf('Clustered to %d clusters\n', nClusters)
 fprintf('Original Graph Size: %d points, %d edges\n', size(G.graph.Nodes,1), size(G.graph.Edges,1))
 fprintf('Bridge Graph Size: %d points, %d edges\n', size(BG.graph.Nodes,1), size(BG.graph.Edges,1))
@@ -73,9 +73,6 @@ file_to_write = [base_name_in_wsl '/' env_name];
 cmd = {'wsl', search_path, file_to_read, ...
     initial_p, initial_eps, tightening_rate, method, ...
     file_to_write, num2str(G.num_vertices), '0'};
-cmd = {'wsl', search_path, file_to_read, ...
-    initial_p, initial_eps, tightening_rate, method, ...
-    file_to_write, '10', '0'};
 
 if RUN_ORIGINAL
     [pathId, runtime_original] = G.run_search(cmd);

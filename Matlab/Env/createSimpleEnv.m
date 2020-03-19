@@ -36,8 +36,7 @@ switch samplingMethod
         sampler.Skip = skip;
         points = sampler.net(nPoints)*homeSize;
     case 'RRT'
-        eta = connectionRadius;%0.5;
-        eta = connectionRadius;
+        params.eta = connectionRadius;
         startPoint = [envGrid envGrid];
         points = startPoint;
         while size(points,1) < nPoints
@@ -48,7 +47,7 @@ switch samplingMethod
             end
             direction = randPoint-points(i,:);
             direction = direction./norm(direction);
-            newPoint = points(i,:)+direction*min(eta, norm(points(i,:)-randPoint));
+            newPoint = points(i,:)+direction*min(params.eta, norm(points(i,:)-randPoint));
             if CollisionDetector(points(i,:), newPoint, obstacles, connectionRadius)
                 points = [points; newPoint];
             end
