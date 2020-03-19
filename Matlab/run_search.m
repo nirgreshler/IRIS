@@ -4,7 +4,7 @@ clc
 clear
 rng(1)
 addpath(genpath(pwd))
-RUN_ORIGINAL = false;
+RUN_ORIGINAL = true;
 
 %% Path settings
 define_path;
@@ -12,7 +12,7 @@ define_path;
 %% Environment settings
 num_rooms = 9;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
-env_name = 'drone_1000';
+% env_name = 'drone_1000';
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
 
 %% Plotting settings
@@ -22,7 +22,7 @@ params.plotEdges = false;
 %% Clustering settings
 clusteringMethod = 'spectral'; % 'kmeans' / 'spectral' / 'inspection'
 params.maxClusters = 20;
-params.minClusters = 4;
+params.minClusters = 12;
 % create clustering object
 clustering = Clustering(clusteringMethod, params);
 
@@ -44,7 +44,7 @@ bridge_graph_path = fullfile(base_name, [env_name '_bridge']);
 G = IGraph(original_graph_path, clustering);
 % build bridge graph and write to file
 tic
-BG = G.build_bridge_graph(USE_VIRTUAL_VERTICES, 10);
+BG = G.build_bridge_graph(USE_VIRTUAL_VERTICES, 11);
 build_bridge_time = toc;
 BG.write_graph(bridge_graph_path);
 
@@ -52,6 +52,7 @@ BG.write_graph(bridge_graph_path);
 if contains(env_name, 'syn')
     PlotEnvironment(params, G, inspectionPoints, obstacles, 'Original Clustered Graph');
     scatter(BG.graph.Nodes.x1, BG.graph.Nodes.x2, 'om', 'Linewidth', 1);
+%     params.plotEdges = true;
     PlotEnvironment(params, BG, inspectionPoints, obstacles, 'Bridge Graph');
 elseif contains(env_name, 'drone')
     inspectionPoints = read_bridge_model();
@@ -68,7 +69,7 @@ file_to_read = [base_name_in_wsl '/' env_name];
 file_to_write = [base_name_in_wsl '/' env_name];
 cmd = {'wsl', search_path, file_to_read, ...
     initial_p, initial_eps, tightening_rate, method, ...
-    file_to_write, num2str(G.num_vertices), '0'};
+    file_to_write, num2str(G.num_vertices()), '0'};
 % cmd = {'wsl', search_path, file_to_read, ...
 %     initial_p, initial_eps, tightening_rate, method, ...
 %     file_to_write, '100', '0'};
