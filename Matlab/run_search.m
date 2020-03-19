@@ -12,7 +12,7 @@ define_path;
 %% Environment settings
 num_rooms = 9;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
-% env_name = 'crisp_100';
+env_name = 'drone_500';
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, env_name));
 
 %% Plotting settings
@@ -28,7 +28,7 @@ clustering = Clustering(clusteringMethod, params);
 
 %% IRIS settings
 initial_p = '0.9';
-initial_eps = '0.5';
+initial_eps = '0.8';
 tightening_rate = '0';
 method = '0';
 
@@ -52,21 +52,29 @@ if contains(env_name, 'syn')
     scatter(BG.graph.Nodes.x1, BG.graph.Nodes.x2, 'om', 'Linewidth', 1);
     PlotEnvironment(params, BG, inspectionPoints, obstacles, 'Bridge Graph');
 elseif contains(env_name, 'drone')
-    inspectionPoints = read_bridge_model();
+    if contains(env_name, 'big')
+        inspectionPoints = read_bridge_model('big');
+    else
+        inspectionPoints = read_bridge_model();
+    end
     PlotBridgeEnvironment(params, G, inspectionPoints, 'Original Clustered Graph');
     plot3(BG.graph.Nodes.x1, BG.graph.Nodes.x2,BG.graph.Nodes.x3,  'om', 'Linewidth', 1);
     PlotBridgeEnvironment(params, BG, inspectionPoints, 'Bridge Graph');
 end
 
+nClusters = length(unique(G.graph.Nodes.cluster));
+fprintf('Clustered to %d clusters\n', nClusters)
+fprintf('Original Graph Size: %d points, %d edges\n', size(G.graph.Nodes,1), size(G.graph.Edges,1))
+fprintf('Bridge Graph Size: %d points, %d edges\n', size(BG.graph.Nodes,1), size(BG.graph.Edges,1))
 %% Run the search in WSL
 file_to_read = [base_name_in_wsl '/' env_name];
 file_to_write = [base_name_in_wsl '/' env_name];
 cmd = {'wsl', search_path, file_to_read, ...
     initial_p, initial_eps, tightening_rate, method, ...
     file_to_write, num2str(G.num_vertices), '0'};
-% cmd = {'wsl', search_path, file_to_read, ...
-%     initial_p, initial_eps, tightening_rate, method, ...
-%     file_to_write, '100', '0'};
+cmd = {'wsl', search_path, file_to_read, ...
+    initial_p, initial_eps, tightening_rate, method, ...
+    file_to_write, '10', '0'};
 
 [pathId, cost, runtime_original] = G.run_search(cmd);
 cov_set = calc_coverage(G, pathId);
@@ -117,8 +125,6 @@ end
 disp(['Original search runtime: ' num2str(runtime_original)]);
 disp(['Bridge graph build time: ' num2str(build_bridge_time)]);
 disp(['Bridge search runtime: ' num2str(runtime_bridge)]);
-fprintf('Original Graph Size: %d points, %d edges\n', size(G.graph.Nodes,1), size(G.graph.Edges,1))
-fprintf('Bridge Graph Size: %d points, %d edges\n', size(BG.graph.Nodes,1), size(BG.graph.Edges,1))
 fprintf('Original Covered: %d points\n', length(cov_set))
 fprintf('Bridge Covered: %d points\n', length(cov_set_bridge))
 fprintf('Original Cost: %.2f\n', cost_orig)
