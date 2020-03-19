@@ -80,7 +80,7 @@ classdef IGraph < handle
                     vertNeighborsInDiffClust = vertNeighbors(vertNeighbors.cluster ~= clIdx, :);
                     if size(vertNeighborsInDiffClust, 1) > 0 || vertInClus.id(vI) == 0 % add the first vertex
                         % only add bridge nodes that add new connection
-                        if any(connected_clusters(clIdx, vertNeighborsInDiffClust.cluster) < MIN_CONN)
+                        if any(connected_clusters(clIdx, vertNeighborsInDiffClust.cluster) < MIN_CONN) || vertInClus.id(vI) == 0 % add the first vertex
                             bridgeNodeIds = [bridgeNodeIds vertInClus.id(vI)];
                             connected_clusters(clIdx, vertNeighborsInDiffClust.cluster) = ...
                                 connected_clusters(clIdx, vertNeighborsInDiffClust.cluster) + 1;
@@ -116,13 +116,31 @@ classdef IGraph < handle
                 % Build a graph of cluster
                 nodesInClusterIdx = find(G.graph.Nodes.cluster == clIdx);
                 clusterG = G.graph.subgraph(nodesInClusterIdx);
+
                 % assert(length(unique(clusterG.conncomp)) == 1);
                 vertIdxInClus = arrayfun(@(x) find(clusterG.Nodes.id == x), vertIdInClus);
                 
                 % dist = clusterG.distances(vertIdxInClus, vertIdxInClus);
                 
+%                 if length(unique(clusterG.conncomp)) == 1
+%                     continue;
+%                 end
+                
                 for i = 1:length(vertIdxInBridgeClus)
-                    for j = i+1:length(vertIdxInBridgeClus)
+                    maxVertToConnect = round(length(vertIdxInBridgeClus) / 5);
+                    connectedVert = 0;
+                    otherVert = setdiff(vertIdxInBridgeClus, vertIdxInBridgeClus(i));
+                    randVertToConnect = otherVert(randperm(length(otherVert)));
+                    % randVertToConnect = randsample(setdiff(vertIdxInBridgeClus, vertIdxInBridgeClus(i)), maxVertToConnect);
+                    for jI = 1:length(randVertToConnect)
+                        j = find(vertIdxInBridgeClus == randVertToConnect(jI));
+                        if connectedVert == maxVertToConnect
+                            break;
+                        end
+                        alreadyConnected = any(sum(vEdgesArray(:, 1:2) == [vertIdxInBridgeClus(j), vertIdxInBridgeClus(i)], 2) == 2);
+                        if alreadyConnected
+                            continue;
+                        end
                         % ee = BG.findedge(vertIdxInBridgeClus(i), vertIdxInBridgeClus(j));
                         ee = A(vertIdxInBridgeClus(i), vertIdxInBridgeClus(j));
                         if full(ee) == 0
@@ -144,6 +162,7 @@ classdef IGraph < handle
                                 vEdgesArray(vEIdx, :) = [vertIdxInBridgeClus(i), vertIdxInBridgeClus(j), 1, 1, 0, 0,...
                                     d, 1];
                                 vEIdx = vEIdx + 1;
+                                connectedVert = connectedVert + 1;
                             else   
                                 % inner path adds coverage, add one virtual
                                 % vertex and two virutal edges
