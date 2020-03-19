@@ -4,7 +4,7 @@ clc
 clear
 rng(1)
 addpath(genpath(pwd))
-RUN_ORIGINAL = true;
+RUN_ORIGINAL = false;
 
 %% Path settings
 define_path;
@@ -22,7 +22,7 @@ params.plotEdges = false;
 %% Clustering settings
 clusteringMethod = 'spectral'; % 'kmeans' / 'spectral' / 'inspection'
 params.maxClusters = 20;
-params.minClusters = 10;
+params.minClusters = 4;
 % create clustering object
 clustering = Clustering(clusteringMethod, params);
 
@@ -33,7 +33,9 @@ tightening_rate = '0';
 method = '0';
 
 %% Algorithm settings
-use_virtual_vertices = false;
+USE_VIRTUAL_VERTICES = false;
+RUN_IRIS_IN_CLUSTERS = false;
+IRIS_IN_CLUSTER_COV_TH = 0.5;
 
 %% Create the graphs
 original_graph_path = fullfile(base_name, env_name);
@@ -42,7 +44,7 @@ bridge_graph_path = fullfile(base_name, [env_name '_bridge']);
 G = IGraph(original_graph_path, clustering);
 % build bridge graph and write to file
 tic
-BG = G.build_bridge_graph(use_virtual_vertices);
+BG = G.build_bridge_graph(USE_VIRTUAL_VERTICES, 10);
 build_bridge_time = toc;
 BG.write_graph(bridge_graph_path);
 
@@ -62,7 +64,6 @@ elseif contains(env_name, 'drone')
     PlotBridgeEnvironment(params, BG, inspectionPoints, 'Bridge Graph');
 end
 
-nClusters = length(unique(G.graph.Nodes.cluster));
 fprintf('Clustered to %d clusters\n', nClusters)
 fprintf('Original Graph Size: %d points, %d edges\n', size(G.graph.Nodes,1), size(G.graph.Edges,1))
 fprintf('Bridge Graph Size: %d points, %d edges\n', size(BG.graph.Nodes,1), size(BG.graph.Edges,1))
@@ -76,18 +77,74 @@ cmd = {'wsl', search_path, file_to_read, ...
     initial_p, initial_eps, tightening_rate, method, ...
     file_to_write, '10', '0'};
 
-[pathId, cost, runtime_original] = G.run_search(cmd);
-cov_set = calc_coverage(G, pathId);
-cost_orig = calc_cost(G, pathId);
+if RUN_ORIGINAL
+    [pathId, runtime_original] = G.run_search(cmd);
+    cov_set = calc_coverage(G, pathId);
+    cost_orig = calc_cost(G, pathId);
+else
+    pathId = [1 1];
+    runtime_original = 0;
+    cov_set = [];
+    cost_orig = 0;
+end
 
 % run bridge
 cmd{3} = [cmd{3} '_bridge'];
 cmd{8} = [cmd{8} '_bridge'];
 cmd{9} = num2str(BG.num_vertices());
-[pathIdBridge, cost, runtime_bridge] = BG.run_search(cmd);
+[pathIdBridge, runtime_bridge] = BG.run_search(cmd);
 realPathId = extract_real_path(G, BG, pathIdBridge);
 cov_set_bridge = calc_coverage(G, realPathId);
 cost_bridge = calc_cost(G, realPathId);
+
+if RUN_IRIS_IN_CLUSTERS
+    bridgeNodesInPath = BG.graph.Nodes(pathIdBridge + 1, :);
+    clusters = unique(bridgeNodesInPath.cluster);
+    nClusters = size(clusters, 1);
+    for iClust = 1:nClusters
+        cIdx = clusters(iClust);
+        bridgeNodeInPathInCluster = bridgeNodesInPath(bridgeNodesInPath.cluster == cIdx, :);
+        covInBridgeNodesInPath = calc_coverage(BG, bridgeNodeInPathInCluster.id);
+        nodesInClusterIdx = find(G.graph.Nodes.cluster == cIdx);
+        clusterG = IGraph(G.graph.subgraph(nodesInClusterIdx));
+        if length(unique(clusterG.graph.conncomp)) > 1
+            % TODO cluster graph is not connected!!
+            continue;
+        end
+        totalCoverageInCluster = calc_coverage(clusterG, clusterG.graph.Nodes.id);
+        coverageAchievedInPath = length(covInBridgeNodesInPath) / length(totalCoverageInCluster);
+        if coverageAchievedInPath > IRIS_IN_CLUSTER_COV_TH
+            continue;
+        end
+        % Run IRIS in cluster
+        % put the bridge node in path first in graph
+        bridgeNodeIdx = clusterG.id2idx(bridgeNodeInPathInCluster.id(1));
+        newOrder = [bridgeNodeIdx, setdiff(1:clusterG.num_vertices, bridgeNodeIdx)];
+        clusterG = IGraph(clusterG.graph.reordernodes(newOrder));
+        clusterFile = strrep(bridge_graph_path, '_bridge','_cluster');
+        clusterG.write_graph(clusterFile);
+        cmd{3} = strrep(cmd{3}, '_bridge', '_cluster');
+        cmd{8} = strrep(cmd{8}, '_bridge', '_cluster');
+        cmd{9} = num2str(clusterG.num_vertices());
+        [clusterPathId, runtime_cluster] = clusterG.run_search(cmd);
+        runtime_bridge = runtime_bridge + runtime_cluster;
+        pathIrisIds = clusterG.graph.Nodes.id(clusterPathId + 1);
+        lastNodeId = clusterG.graph.Nodes.id(clusterPathId(end) + 1);
+        lastNodeIdx = clusterG.id2idx(lastNodeId);
+        % find shortest path back to bridge node
+        pathBackIds = clusterG.graph.Nodes.id(clusterG.graph.shortestpath(lastNodeIdx, 1));
+        
+        pathInClusterIds = [pathIrisIds(1:end-1)', pathBackIds'];
+        
+        % add the cluster path to real path
+        bridgeIdxInRealPath = find(realPathId == bridgeNodeInPathInCluster.id(1));
+        realPathId = [realPathId(1:bridgeIdxInRealPath-1), ...
+            pathInClusterIds, ...
+            realPathId(bridgeIdxInRealPath+1:end)];
+    end
+    cost_bridge = calc_cost(G, realPathId);
+    cov_set_bridge = calc_coverage(G, realPathId);
+end
 
 %% Show path
 if contains(env_name, 'syn') || contains(env_name, 'drone')

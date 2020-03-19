@@ -36,6 +36,7 @@ switch samplingMethod
         sampler.Skip = skip;
         points = sampler.net(nPoints)*homeSize;
     case 'RRT'
+        eta = connectionRadius;%0.5;
         eta = connectionRadius;
         startPoint = [envGrid envGrid];
         points = startPoint;
