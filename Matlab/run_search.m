@@ -23,11 +23,12 @@ params.plotEdges = false;
 clusteringMethod = 'spectral'; % 'kmeans' / 'spectral' / 'inspection'
 params.maxClusters = 20;
 params.minClusters = 12;
+params.minClusters = 2;
 % create clustering object
 clustering = Clustering(clusteringMethod, params);
 
 %% IRIS settings
-initial_p = '0.9';
+initial_p = '0.8';
 initial_eps = '0.5';
 tightening_rate = '0';
 method = '0';
@@ -36,7 +37,7 @@ method = '0';
 USE_VIRTUAL_VERTICES = false;
 RUN_IRIS_IN_CLUSTERS = false;
 IRIS_IN_CLUSTER_COV_TH = 0.5;
-
+minNumBridges = inf;
 %% Create the graphs
 original_graph_path = fullfile(base_name, env_name);
 bridge_graph_path = fullfile(base_name, [env_name '_bridge']);
@@ -44,7 +45,7 @@ bridge_graph_path = fullfile(base_name, [env_name '_bridge']);
 G = IGraph(original_graph_path, clustering);
 % build bridge graph and write to file
 tic
-BG = G.build_bridge_graph(USE_VIRTUAL_VERTICES, 11);
+BG = G.build_bridge_graph(USE_VIRTUAL_VERTICES, minNumBridges);
 build_bridge_time = toc;
 BG.write_graph(bridge_graph_path);
 
@@ -55,15 +56,19 @@ if contains(env_name, 'syn')
 %     params.plotEdges = true;
     PlotEnvironment(params, BG, inspectionPoints, obstacles, 'Bridge Graph');
 elseif contains(env_name, 'drone')
-    inspectionPoints = read_bridge_model();
+    if contains(env_name, 'big')
+        inspectionPoints = read_bridge_model('big');
+    else
+        inspectionPoints = read_bridge_model();
+    end
     PlotBridgeEnvironment(params, G, inspectionPoints, 'Original Clustered Graph');
     plot3(BG.graph.Nodes.x1, BG.graph.Nodes.x2,BG.graph.Nodes.x3,  'om', 'Linewidth', 1);
     PlotBridgeEnvironment(params, BG, inspectionPoints, 'Bridge Graph');
 end
-
+nClusters = length(unique(G.graph.Nodes.cluster));
+fprintf('Clustered to %d clusters\n', nClusters)
 fprintf('Original Graph Size: %d points, %d edges\n', size(G.graph.Nodes,1), size(G.graph.Edges,1))
 fprintf('Bridge Graph Size: %d points, %d edges\n', size(BG.graph.Nodes,1), size(BG.graph.Edges,1))
-
 %% Run the search in WSL
 file_to_read = [base_name_in_wsl '/' env_name];
 file_to_write = [base_name_in_wsl '/' env_name];

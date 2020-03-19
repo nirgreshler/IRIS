@@ -13,7 +13,11 @@ classdef Clustering < handle
         function clusters = cluster(c, conf, M)           
             switch c.type
                 case 'kmeans'
-                    clusters = KMeansClustering(c.params, conf, c.params.k);
+                    if isfield(c.params, 'k')
+                        clusters = KMeansClustering(c.params, conf, c.params.k);
+                    else
+                        clusters = KMeansClustering(c.params, conf, M);
+                    end
                 case 'spectral'
                     clusters = SpectralClustering(c.params, conf, M);
                 case 'inspection'
