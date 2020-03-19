@@ -20,10 +20,12 @@ params.showText = false;
 params.plotEdges = false;
 
 %% Clustering settings
-clusteringMethod = 'spectral'; % 'kmeans' / 'spectral' / 'inspection'
+clusteringMethod = 'inspection'; % 'kmeans' / 'spectral' / 'inspection'
 params.maxClusters = 20;
 params.minClusters = 12;
 params.minClusters = 2;
+params.inspectionPoints = inspectionPoints;
+params.obstacles = obstacles;
 % create clustering object
 clustering = Clustering(clusteringMethod, params);
 
@@ -37,12 +39,14 @@ method = '0';
 USE_VIRTUAL_VERTICES = false;
 RUN_IRIS_IN_CLUSTERS = false;
 IRIS_IN_CLUSTER_COV_TH = 0.5;
-minNumBridges = inf;
+minNumBridges = 10;
 %% Create the graphs
 original_graph_path = fullfile(base_name, env_name);
 bridge_graph_path = fullfile(base_name, [env_name '_bridge']);
 % read original graph
 G = IGraph(original_graph_path, clustering);
+nClusters = length(unique(G.graph.Nodes.cluster));
+fprintf('Clustered to %d clusters\n', nClusters)
 % build bridge graph and write to file
 tic
 BG = G.build_bridge_graph(USE_VIRTUAL_VERTICES, minNumBridges);
@@ -65,8 +69,7 @@ elseif contains(env_name, 'drone')
     plot3(BG.graph.Nodes.x1, BG.graph.Nodes.x2,BG.graph.Nodes.x3,  'om', 'Linewidth', 1);
     PlotBridgeEnvironment(params, BG, inspectionPoints, 'Bridge Graph');
 end
-nClusters = length(unique(G.graph.Nodes.cluster));
-fprintf('Clustered to %d clusters\n', nClusters)
+
 fprintf('Original Graph Size: %d points, %d edges\n', size(G.graph.Nodes,1), size(G.graph.Edges,1))
 fprintf('Bridge Graph Size: %d points, %d edges\n', size(BG.graph.Nodes,1), size(BG.graph.Edges,1))
 %% Run the search in WSL
