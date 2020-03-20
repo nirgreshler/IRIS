@@ -49,4 +49,4 @@ else
     clustersAll(invalidPointsIdcs) = iClusters;
 end
 
-clusters = clustersAll;
+clusters = clustersAll(:);

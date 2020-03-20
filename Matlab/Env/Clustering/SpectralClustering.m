@@ -15,8 +15,14 @@ end
 if ~isfield(params, 'laplacianType')
     params.laplacianType = 'normal';
 end
+if ~isfield(params, 'useExpDist')
+    params.useExpDist = false;
+end
 if params.normalizeM
     M(M > 0) = 1;
+end
+if params.useExpDist
+    M(M > 0) = exp(-(1./M(M>0)).^2);
 end
 D = diag(sum(M));
 switch params.laplacianType
