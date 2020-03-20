@@ -1,4 +1,4 @@
-clear
+% clear
 close all
 clc
 nSqrRooms = 4;
@@ -84,7 +84,7 @@ switch clusteringMethod
         clusters = InspectionClustering(params, points, pointsInSight, M);
 end
 %% Plot enviroment
-PlotEnvironment(params, points, clusters, M, inspectionPoints, obstacles, ['Clustered with ', clusteringMethod]);
+% PlotEnvironment(params, points, clusters, M, inspectionPoints, obstacles, ['Clustered with ', clusteringMethod]);
 if saveEnv
     %% Write text files
     filename = ['syn_' num2str(nRooms) 'rooms'];

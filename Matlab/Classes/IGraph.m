@@ -2,6 +2,7 @@ classdef IGraph < handle
     
     properties
         graph
+        digraph
         M
         name
     end
@@ -13,7 +14,7 @@ classdef IGraph < handle
                 [~, g.name] = fileparts(filepath);
                 [conf, vertex, edge] = g.read_graph(filepath);
 
-                g.M = g.edges2M(size(conf, 1), table2array(edge));
+                g.M = g.edges2M(size(conf, 1), [edge.source, edge.target, edge.Weight]);
                 
                 % Perform clustering
                 if nargin > 1
@@ -28,6 +29,10 @@ classdef IGraph < handle
                 
                 EndNodes = [edge.source+1, edge.target+1];
                 EndNodes = table(EndNodes);
+%                 source = edge.source+1;
+%                 source = table(source);
+%                 target = edge.target+1;
+%                 target = table(target);
                 virtual = zeros(size(EndNodes, 1), 1);
                 virutalEdges = table(virtual);
                 virtual = zeros(size(conf, 1), 1);
@@ -98,7 +103,7 @@ classdef IGraph < handle
             ptsPerCluster = histcounts(BG.Nodes.cluster, nClusters);
             maxVirtEdges = 2 * sum((ptsPerCluster .* (ptsPerCluster - 1))/2);
             maxVirtVerts = sum((ptsPerCluster .* (ptsPerCluster - 1))/2);
-            vEdgesArray = zeros(maxVirtEdges, 8);
+            vEdgesArray = zeros(maxVirtEdges, 9);
             vVertsArray = cell(maxVirtVerts, 8); % TODO
             vEIdx = 1;
             vVIdx = 1;
@@ -160,17 +165,17 @@ classdef IGraph < handle
                                 % inner path does not add coverage, just
                                 % add one virtual edge
                                 vEdgesArray(vEIdx, :) = [vertIdxInBridgeClus(i), vertIdxInBridgeClus(j), 1, 1, 0, 0,...
-                                    d, 1];
+                                    d, 0, 1];
                                 vEIdx = vEIdx + 1;
                                 connectedVert = connectedVert + 1;
                             else   
                                 % inner path adds coverage, add one virtual
                                 % vertex and two virutal edges
                                 vEdgesArray(vEIdx, :) = [vertIdxInBridgeClus(i), nextVertIdxInBridgeGraph, 1, 1, 0, 0,...
-                                    d/2, 1];
+                                    d/2, 1, 1];
                                 vEIdx = vEIdx + 1;
                                 vEdgesArray(vEIdx, :) = [nextVertIdxInBridgeGraph, vertIdxInBridgeClus(j), 1, 1, 0, 0,...
-                                    d/2, 1];
+                                    d/2, 1, 1];
                                 vEIdx = vEIdx + 1;
                                 
                                 % Add virtual vertex
@@ -190,18 +195,24 @@ classdef IGraph < handle
             % remove unused rows
             vEdgesArray = vEdgesArray(1:vEIdx-1, :);
             vVertsArray = vVertsArray(1:vVIdx-1, :); 
+
+            dgraph = [];
             
             % create and add tables
             edgeTable = table([vEdgesArray(:, 1), vEdgesArray(:, 2)], ...
                 vEdgesArray(:, 3), vEdgesArray(:, 4), vEdgesArray(:, 5), ...
                 vEdgesArray(:, 6), vEdgesArray(:, 7), vEdgesArray(:, 8), ...
+                vEdgesArray(:, 9), ...
                 'VariableName', BG.Edges.Properties.VariableNames);
             if addVirtVert
+                dgraph = digraph(BG.Edges, BG.Nodes);
                 vertTable = table(cell2mat(vVertsArray(:, 1)), cell2mat(vVertsArray(:, 2)), ...
                     cell2mat(vVertsArray(:, 3)), vVertsArray(:, 4), cell2mat(vVertsArray(:, 5)), ...
                     cell2mat(vVertsArray(:, 6)), cell2mat(vVertsArray(:, 7)), cell2mat(vVertsArray(:, 8)), ...
                     'VariableName', BG.Nodes.Properties.VariableNames);
                 BG = BG.addnode(vertTable);
+                dgraph = dgraph.addnode(vertTable);
+                dgraph = dgraph.addedge(edgeTable);
             end
             BG = BG.addedge(edgeTable);
             
@@ -209,6 +220,10 @@ classdef IGraph < handle
             [~, order] = sort(BG.Nodes.id);
             BG = BG.reordernodes(order);
             BG = IGraph(BG);
+            if ~isempty(dgraph)
+                [~, order] = sort(dgraph.Nodes.id);
+                BG.digraph = dgraph.reordernodes(order);
+            end
         end
         
         function [pathId, runtime] = run_search(G, cmd)
@@ -229,7 +244,11 @@ classdef IGraph < handle
         
         function write_graph(G, pathToWrite)
             assert(isa(G, 'IGraph'));
-            G = G.graph;
+            if isempty(G.digraph)
+                G = G.graph; 
+            else
+                G = G.digraph; 
+            end 
             nVars = length(G.Nodes.Properties.VariableNames);
             confVarIdx = [];
             for i = 1:nVars
@@ -262,14 +281,14 @@ classdef IGraph < handle
             fclose(fId);
             
             % edges
-            fId = fopen([pathToWrite '_edge'], 'w');
+            fId = fopen([pathToWrite '_edge'], 'w');            
             edgeArray = table2array(G.Edges(:, 1:end-1));
             for k = 1:size(G.Edges, 1)
                 edgeLine = edgeArray(k, :);
                 % fix indices
                 edgeLine(1) = edgeLine(1) - 1;
                 edgeLine(2) = edgeLine(2) - 1;
-                fprintf(fId, '%d %d %d %d %d %d %f\n', edgeLine);
+                fprintf(fId, '%d %d %d %d %d %d %f %d\n', edgeLine);
             end
             fclose(fId);
         end
@@ -353,8 +372,8 @@ classdef IGraph < handle
             opts.Delimiter = " ";
             
             % Specify column names and types
-            opts.VariableNames = ["source", "target", "checked", "valid", "time_forward_kinematics", "time_collision_detection", "Weight"];
-            opts.VariableTypes = ["double", "double", "double", "double", "double", "double", "double"];
+            opts.VariableNames = ["source", "target", "checked", "valid", "time_forward_kinematics", "time_collision_detection", "Weight", "directed"];
+            opts.VariableTypes = ["double", "double", "double", "double", "double", "double", "double", "double"];
             opts.ExtraColumnsRule = "ignore";
             opts.EmptyLineRule = "read";
             opts.ConsecutiveDelimitersRule = "join";
