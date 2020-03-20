@@ -24,6 +24,8 @@ classdef IGraph < handle
                         cluster(cluster == uClusters(i)) = i;
                     end
                     cluster = table(cluster);
+                else
+                    cluster = [];
                 end
                 
                 EndNodes = [edge.source+1, edge.target+1];
@@ -211,7 +213,10 @@ classdef IGraph < handle
             BG = IGraph(BG);
         end
         
-        function [pathId, runtime] = run_search(G, cmd)
+        function [pathId, runtime] = run_search(G, cmd, isBatch)
+            if ~exist('isBatch', 'var') || isempty(isBatch)
+                isBatch = false;
+            end
             tic
             status = system(strjoin(cmd));
             runtime = toc;
@@ -385,8 +390,8 @@ classdef IGraph < handle
         function M = edges2M(~, nPoints, edges)
             M = zeros(nPoints);
             for k = 1:size(edges,1)
-                M(edges(k, 1)+1, edges(k, 2)+1) = edges(k, end);
-                M(edges(k, 2)+1, edges(k, 1)+1) = edges(k, end);
+                M(edges(k, 1)+1, edges(k, 2)+1) = 1/edges(k, end);
+                M(edges(k, 2)+1, edges(k, 1)+1) = 1/edges(k, end);
             end
             assert(issymmetric(M));
         end
