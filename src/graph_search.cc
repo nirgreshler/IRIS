@@ -268,6 +268,8 @@ std::vector<Idx> GraphSearch::SearchVirtualGraphCompleteLazy(const RealNum p, co
 
             // not a valid node
             if (n == nullptr) { continue; }
+            // std::cout << n.get()->Index() << std::endl;
+            // std::cout << ResultCoverageSize() << std::endl;          
 
             // if (n.get()->Index() == 38 || n.get()->Index() == 302)
             //     std::cout << n.get()->Index() << std::endl;
@@ -278,6 +280,7 @@ std::vector<Idx> GraphSearch::SearchVirtualGraphCompleteLazy(const RealNum p, co
             if (result_node == nullptr || n->BetterThan(result_node)) {
                 result_node = n;
             }
+            // std::cout << result_node->VisSet().Size() << std::endl;  
 
             // check for termination
             if (InGoalSet(n)) {

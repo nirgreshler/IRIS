@@ -14,7 +14,7 @@
 #define DEBUG_MODE 0
 
 #define USE_CRISP 0
-#define USE_PLANAR 1
+#define USE_PLANAR 0
 
 #define USE_GHOST_DATA 1
 
@@ -33,7 +33,7 @@
 #if USE_PLANAR
 #define MAX_COVERAGE_SIZE 400
 #else
-#define MAX_COVERAGE_SIZE 3817 // 14021
+#define MAX_COVERAGE_SIZE 14021 // 3817, 14021
 #endif // USE_PLANAR
 
 #endif // USE_CRISP
