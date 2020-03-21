@@ -8,6 +8,9 @@ end
 paramFields = fieldnames(params);
 fId = fopen([pathToWrite '_params'], 'w');
 for k = 1:numel(paramFields)
+    if strcmpi(paramFields{k}, 'obstacles')
+        continue;
+    end
     fprintf(fId, '%s: %s\n', paramFields{k}, num2str(params.(paramFields{k})));
 end
 fclose(fId);
@@ -30,7 +33,7 @@ fId = fopen([pathToWrite '_edge'], 'w');
 for k = 1:nPoints
     for p = k+1:nPoints
         if M(k,p) > 0
-            fprintf(fId, '%d %d 1 1 0 0 %f\n', k-1, p-1, norm(points(k,:)-points(p,:)));
+            fprintf(fId, '%d %d 1 1 0 0 %f 0\n', k-1, p-1, norm(points(k,:)-points(p,:)));
         end
     end
 end

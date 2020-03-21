@@ -1,13 +1,13 @@
-clear
+% clear
 close all
 clc
-nSqrRooms = 4;
-homeSize = 16;%nSqrRooms^2;
+nSqrRooms = 3;
+homeSize = 9;%nSqrRooms^2;
 nRooms = nSqrRooms^2;
 roomSize = homeSize/nSqrRooms;
 envGrid = 0.01;
 doorSize = 0.25;
-nPoints = 2000;
+nPoints = 1500;
 nInspectionPoints = 400;
 connectionRadius = 0.8;
 sightRadius = roomSize*sqrt(2) / 2;
@@ -84,7 +84,7 @@ switch clusteringMethod
         clusters = InspectionClustering(params, points, pointsInSight, M);
 end
 %% Plot enviroment
-PlotEnvironment(params, points, clusters, M, inspectionPoints, obstacles, ['Clustered with ', clusteringMethod]);
+% PlotEnvironment(params, points, clusters, M, inspectionPoints, obstacles, ['Clustered with ', clusteringMethod]);
 if saveEnv
     %% Write text files
     filename = ['syn_' num2str(nRooms) 'rooms'];

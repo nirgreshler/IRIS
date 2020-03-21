@@ -4,7 +4,7 @@ clc
 clear
 rng(1)
 addpath(genpath(pwd))
-RUN_ORIGINAL = true;
+RUN_ORIGINAL = false;
 
 %% Path settings
 define_path;
@@ -31,7 +31,7 @@ params.obstacles = obstacles;
 clustering = Clustering(clusteringMethod, params);
 
 %% IRIS settings
-initial_p_orig = '0.25';
+initial_p_orig = '0.75';
 initial_eps = '0.5';
 tightening_rate = '0';
 method = '0';
@@ -66,7 +66,7 @@ else
 end
 
 minNumBridgesVec = 5:5:30;
-pVec = 0.25:0.05:0.4;
+pVec = 0.65:0.05:0.8;
 covVec = zeros(length(pVec), length(minNumBridgesVec));
 costVec = zeros(length(pVec), length(minNumBridgesVec));
 runtimeVec = zeros(length(pVec), length(minNumBridgesVec));
