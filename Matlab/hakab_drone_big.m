@@ -16,14 +16,20 @@ if ~exist('exp_idx', 'var')
     res = table(runtime_original, build_bridge_time, runtime_bridge, ...
         cov, cov_bridge, cost_orig, cost_bridge, num_clusters, ...
         nv_orig, ne_orig, nv_bridge, ne_bridge);
-    first_exp = 1;
-else
-    first_exp = exp_idx;
+    exp_idx = 1;
 end
+
+define_path;
+
+filename = 'drone_big_2000';
+file_to_read = [base_name_in_wsl '/' filename];
 
 while exp_idx <= num_exp
     try
-        createSimpleEnv;
+        
+        build_path = [wsl_path, '/build_drone_big/app/build_graph'];
+        % build a graph
+        system(['wsl ' build_path ' ' num2str(exp_idx) ' 2000 ' file_to_read]);
         
         run_search;
         
@@ -42,30 +48,31 @@ while exp_idx <= num_exp
         
         f = gcf;
         savefig(f, ['Results\' env_name '_' num2str(exp_idx)]);
-        copyfile([original_graph_path '_vertex'], ['Results\' env_name '_vertex_' num2str(exp_idx)]);
-        copyfile([original_graph_path '_conf'], ['Results\' env_name '_conf_' num2str(exp_idx)]);
-        copyfile([original_graph_path '_edge'], ['Results\' env_name '_edge_' num2str(exp_idx)]);
-        copyfile([original_graph_path '_inspectionPoints'], ['Results\' env_name '_inspectionPoints_' num2str(exp_idx)]);
-        copyfile([original_graph_path '_obstacles'], ['Results\' env_name '_obstacles_' num2str(exp_idx)]);
-        copyfile([original_graph_path '_params'], ['Results\' env_name '_params_' num2str(exp_idx)]);
-        
+%         copyfile([original_graph_path '_vertex'], ['Results\' env_name '_vertex_' num2str(exp_idx)]);
+%         copyfile([original_graph_path '_conf'], ['Results\' env_name '_conf_' num2str(exp_idx)]);
+%         copyfile([original_graph_path '_edge'], ['Results\' env_name '_edge_' num2str(exp_idx)]);
+%         copyfile([original_graph_path '_inspectionPoints'], ['Results\' env_name '_inspectionPoints_' num2str(exp_idx)]);
+%         copyfile([original_graph_path '_obstacles'], ['Results\' env_name '_obstacles_' num2str(exp_idx)]);
+%         copyfile([original_graph_path '_params'], ['Results\' env_name '_params_' num2str(exp_idx)]);
+%         
         res = table(runtime_original, build_bridge_time, runtime_bridge, ...
             cov, cov_bridge, cost_orig, cost_bridge, num_clusters,...
             nv_orig, ne_orig, nv_bridge, ne_bridge);
         
         save(['Results\' env_name '_results'], 'res');
         
-        disp(mean(res.cov(1:exp_idx))/400);
-        disp(mean(res.cov_bridge(1:exp_idx))/400);
-        pause(0.5);
+        disp(mean(res.cov(1:exp_idx))/14021);
+        disp(mean(res.cov_bridge(1:exp_idx))/14021);
+%         pause(0.5);
         exp_idx = exp_idx + 1;
     catch
+        disp('error');
     end
 end
 
 avg = mean(res.Variables);
-res12 = res(res.num_clusters > 12, :);
-avg_big_clusters12 = mean(res12.Variables);
-
 res15 = res(res.num_clusters > 15, :);
-avg_big_clusters15 = mean(res15.Variables);
+avg_big_clusters15 = mean(res12.Variables);
+
+res20 = res(res.num_clusters > 20, :);
+avg_big_clusters20 = mean(res15.Variables);
