@@ -12,11 +12,14 @@ define_path;
 %% Environment settings
 num_rooms = 9;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
-env_name = 'drone_big';
-n_vertices = 2000;
-% filename = ['syn_' num2str(num_rooms) 'rooms'];
-filename = [env_name, '_', num2str(n_vertices)];
-search_path = [wsl_path, '/', 'build_', env_name, '/app/search_graph'];
+env_name = 'planar';
+n_vertices = 100;
+if contains(env_name, 'syn')
+    filename = ['syn_' num2str(num_rooms) 'rooms'];
+else
+    filename = [env_name, '_', num2str(n_vertices)];
+    search_path = [wsl_path, '/', 'build_', env_name, '/app/search_graph'];
+end
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, filename));
 
 %% Plotting settings
@@ -25,8 +28,8 @@ params.plotEdges = false;
 
 %% Clustering settings
 clusteringMethod = 'spectral'; % 'kmeans' / 'spectral' / 'inspection'
-params.maxClusters = 50;
-params.minClusters = 2;
+params.maxClusters = 20;
+params.minClusters = 15;
 params.useExpDist = false;
 params.inspectionPoints = inspectionPoints;
 params.obstacles = obstacles;
@@ -34,7 +37,7 @@ params.obstacles = obstacles;
 clustering = Clustering(clusteringMethod, params);
 
 %% IRIS settings
-initial_p = '0.25';
+initial_p = '0.8';
 initial_p_for_bridge = '0.2';
 initial_eps = '0.5';
 tightening_rate = '0';
@@ -104,7 +107,8 @@ end
 % run bridge
 cmd{4} = initial_p_for_bridge;
 cmd{3} = [cmd{3} '_bridge'];
-cmd{4} = '0.8';
+cmd{4} = '0.85';
+
 cmd{8} = [cmd{8} '_bridge'];
 cmd{9} = num2str(BG.num_vertices());
 [pathIdBridge, runtime_bridge_] = BG.run_search(cmd);

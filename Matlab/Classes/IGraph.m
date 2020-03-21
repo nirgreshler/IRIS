@@ -73,6 +73,8 @@ classdef IGraph < handle
             % limit number of bridge nodes
             connected_clusters = zeros(nClusters, nClusters);
             
+            conf_dims = G.get_dims(G.name);
+            
             % For each cluster, find the bridge vertices
             bridgeNodeIds = [];
             for iClus = 1:nClusters
@@ -106,7 +108,7 @@ classdef IGraph < handle
             maxVirtEdges = 2 * sum((ptsPerCluster .* (ptsPerCluster - 1))/2);
             maxVirtVerts = sum((ptsPerCluster .* (ptsPerCluster - 1))/2);
             vEdgesArray = zeros(maxVirtEdges, 9);
-            vVertsArray = cell(maxVirtVerts, 8); % TODO
+            vVertsArray = cell(maxVirtVerts, 6 + conf_dims);
             vEIdx = 1;
             vVIdx = 1;
             nextVertId = max(G.graph.Nodes.id) + 1; % generate new unique id
@@ -181,10 +183,13 @@ classdef IGraph < handle
                                 vEIdx = vEIdx + 1;
                                 
                                 % Add virtual vertex
-                                new_conf = [clusterG.Nodes.x1(innerPathIdx(1)), ...
-                                    clusterG.Nodes.x2(innerPathIdx(1))]; % TODO
+                                vVertsArray(vVIdx, 1:4) = [nextVertId, 0, time_vis, {inspectPtsId}];
+                                for kkk = 1:conf_dims
+                                    vVertsArray{vVIdx, 4+kkk} = clusterG.Nodes.(['x' num2str(kkk)])(innerPathIdx(1));
+                                end
+                                vVertsArray{vVIdx, 4+kkk+1} = clIdx;
+                                vVertsArray{vVIdx, 4+kkk+2} = 1;
                                 
-                                vVertsArray(vVIdx, :) = [nextVertId, 0, time_vis, {inspectPtsId}, new_conf(1), new_conf(2), clIdx, 1];
                                 vVIdx = vVIdx + 1;
                                 nextVertId = nextVertId + 1;
                                 nextVertIdxInBridgeGraph = nextVertIdxInBridgeGraph + 1;
@@ -208,10 +213,14 @@ classdef IGraph < handle
                 'VariableName', BG.Edges.Properties.VariableNames);
             if addVirtVert
                 dgraph = digraph(BG.Edges, BG.Nodes);
-                vertTable = table(cell2mat(vVertsArray(:, 1)), cell2mat(vVertsArray(:, 2)), ...
-                    cell2mat(vVertsArray(:, 3)), vVertsArray(:, 4), cell2mat(vVertsArray(:, 5)), ...
-                    cell2mat(vVertsArray(:, 6)), cell2mat(vVertsArray(:, 7)), cell2mat(vVertsArray(:, 8)), ...
-                    'VariableName', BG.Nodes.Properties.VariableNames);
+                cmdToEval = ['table(cell2mat(vVertsArray(:, 1)), cell2mat(vVertsArray(:, 2)), ' ...
+                    'cell2mat(vVertsArray(:, 3)), vVertsArray(:, 4)'];
+                for kkk = 5:size(vVertsArray, 2)
+                    cmdToEval = [cmdToEval ', cell2mat(vVertsArray(:, ' num2str(kkk) ')) '];
+                end
+                cmdToEval = [cmdToEval ', ''VariableName'', BG.Nodes.Properties.VariableNames); '];
+                
+                vertTable = eval(cmdToEval);
                 BG = BG.addnode(vertTable);
                 dgraph = dgraph.addnode(vertTable);
                 dgraph = dgraph.addedge(edgeTable);

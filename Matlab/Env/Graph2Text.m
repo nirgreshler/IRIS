@@ -8,6 +8,9 @@ end
 paramFields = fieldnames(params);
 fId = fopen([pathToWrite '_params'], 'w');
 for k = 1:numel(paramFields)
+    if strcmpi(paramFields{k}, 'obstacles')
+        continue;
+    end
     fprintf(fId, '%s: %s\n', paramFields{k}, num2str(params.(paramFields{k})));
 end
 fclose(fId);
