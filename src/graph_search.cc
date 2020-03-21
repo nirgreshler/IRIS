@@ -227,7 +227,7 @@ std::vector<Idx> GraphSearch::SearchVirtualGraphCompleteLazy(const RealNum p, co
             
             // an edge should be in virtual graph then it should not be checked as invalid
             if (e->in_virtual_graph && !(e->virtual_checked && !e->valid) ) {
-                map_->AddDirectEdge(e->source, e->target, e->cost);
+                map_->AddDirectEdge(e->source, e->target, e->cost, e->directed);
             }
         }
 
@@ -268,11 +268,19 @@ std::vector<Idx> GraphSearch::SearchVirtualGraphCompleteLazy(const RealNum p, co
 
             // not a valid node
             if (n == nullptr) { continue; }
+            // std::cout << n.get()->Index() << std::endl;
+            // std::cout << ResultCoverageSize() << std::endl;          
+
+            // if (n.get()->Index() == 38 || n.get()->Index() == 302)
+            //     std::cout << n.get()->Index() << std::endl;
+
+            // std::cout << n.get()->Index() << std::endl;
 
             // update result
             if (result_node == nullptr || n->BetterThan(result_node)) {
                 result_node = n;
             }
+            // std::cout << result_node->VisSet().Size() << std::endl;  
 
             // check for termination
             if (InGoalSet(n)) {
@@ -349,7 +357,7 @@ std::vector<Idx> GraphSearch::SearchVirtualGraph(const RealNum p, const RealNum 
 		
 		// an edge should be in virtual graph then it should not be checked as invalid
 		if (e->in_virtual_graph && !(e->virtual_checked && !e->valid) ) {
-			map_->AddDirectEdge(e->source, e->target, e->cost);
+			map_->AddDirectEdge(e->source, e->target, e->cost, e->directed);
 		}
 	}
 
