@@ -10,8 +10,8 @@ RUN_ORIGINAL = false;
 define_path;
 
 %% Environment settings
-env_name = 'crisp';
-n_vertices = 500;
+env_name = 'drone_big';
+n_vertices = 2000;
 filename = [env_name, '_', num2str(n_vertices)];
 search_path = [wsl_path, '/', 'build_', env_name, '/app/search_graph'];
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, filename));
@@ -23,7 +23,7 @@ params.plotEdges = false;
 %% Clustering settings
 clusteringMethod = 'spectral'; % 'kmeans' / 'spectral' / 'inspection'
 params.maxClusters = 20;
-params.minClusters = 2;
+params.minClusters = 10;
 params.useExpDist = false;
 params.inspectionPoints = inspectionPoints;
 params.obstacles = obstacles;
@@ -31,7 +31,7 @@ params.obstacles = obstacles;
 clustering = Clustering(clusteringMethod, params);
 
 %% IRIS settings
-initial_p_orig = '0.75';
+initial_p_orig = '0.25';
 initial_eps = '0.5';
 tightening_rate = '0';
 method = '0';
@@ -60,13 +60,13 @@ if RUN_ORIGINAL
     cost_orig = calc_cost(G, pathId);
     origCoverage = length(cov_set);
 else
-    origCoverage = 2230;
-    cost_orig = 204.3440;
-    runtime_original = 60.7884;
+    origCoverage = 18487;
+    cost_orig = 0.18;
+    runtime_original = 1157.3;
 end
 
-minNumBridgesVec = 5:5:30;
-pVec = 0.65:0.05:0.8;
+minNumBridgesVec = 25;
+pVec = 0.4;
 covVec = zeros(length(pVec), length(minNumBridgesVec));
 costVec = zeros(length(pVec), length(minNumBridgesVec));
 runtimeVec = zeros(length(pVec), length(minNumBridgesVec));
@@ -118,7 +118,7 @@ title('Runtime')
 fprintf('Original:\n%.2f\n%d\n%d\n%d\n%.2f\n%.1f\n',...
     str2num(initial_p_orig), size(G.graph.Nodes,1), size(G.graph.Edges,1), origCoverage, cost_orig, runtime_original)
 %%
-chosenIdx = 23;
+chosenIdx = 7;
 [i,j] = ind2sub([length(pVec), length(minNumBridgesVec)], chosenIdx);
 chosenP = pVec(i);
 chosenMinNumBridge = minNumBridgesVec(j);
