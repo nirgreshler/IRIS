@@ -164,6 +164,7 @@ void Inspection::Graph::Save(const String file_name, const bool save_configs, co
 		<< e->time_forward_kinematics << " "
 		<< e->time_collision_detection << " "
 		<< e->cost << " "
+		<< 0 << " " // undirected edge
 		<< std::endl;
 	}
 	fout.close();
@@ -278,6 +279,7 @@ void Inspection::Graph::ReadFromFiles(const String file_name, const bool read_co
 			else {
 				vertices_[i]->vis.Insert(std::stoi(field));
 			}
+			// std::cout << i << " " << j << std::endl;
 			j++;
 		}
 		UpdateGlobalVisibility(vertices_[i]->vis);
@@ -303,7 +305,8 @@ void Inspection::Graph::ReadFromFiles(const String file_name, const bool read_co
 		>> edge->valid
 		>> edge->time_forward_kinematics
 		>> edge->time_collision_detection
-		>> edge->cost;
+		>> edge->cost
+		>> edge->directed;
 
 		AddEdge(edge);
 	}

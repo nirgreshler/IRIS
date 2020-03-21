@@ -1,4 +1,4 @@
-clear
+% clear
 close all
 clc
 nSqrRooms = 3;
@@ -36,8 +36,7 @@ switch samplingMethod
         sampler.Skip = skip;
         points = sampler.net(nPoints)*homeSize;
     case 'RRT'
-        eta = connectionRadius;%0.5;
-        eta = connectionRadius;
+        params.eta = connectionRadius;
         startPoint = [envGrid envGrid];
         points = startPoint;
         while size(points,1) < nPoints
@@ -48,7 +47,7 @@ switch samplingMethod
             end
             direction = randPoint-points(i,:);
             direction = direction./norm(direction);
-            newPoint = points(i,:)+direction*min(eta, norm(points(i,:)-randPoint));
+            newPoint = points(i,:)+direction*min(params.eta, norm(points(i,:)-randPoint));
             if CollisionDetector(points(i,:), newPoint, obstacles, connectionRadius)
                 points = [points; newPoint];
             end
@@ -85,7 +84,7 @@ switch clusteringMethod
         clusters = InspectionClustering(params, points, pointsInSight, M);
 end
 %% Plot enviroment
-PlotEnvironment(params, points, clusters, M, inspectionPoints, obstacles, ['Clustered with ', clusteringMethod]);
+% PlotEnvironment(params, points, clusters, M, inspectionPoints, obstacles, ['Clustered with ', clusteringMethod]);
 if saveEnv
     %% Write text files
     filename = ['syn_' num2str(nRooms) 'rooms'];

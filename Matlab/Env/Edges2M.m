@@ -13,6 +13,6 @@ if ~exist('nPoints', 'var') || isempty(nPoints)
 end
 M = zeros(nPoints);
 for k = 1:size(edges,1)
-    M(uIdcs==idcs(k,1), uIdcs==idcs(k,2)) = edges(k,3);
-    M(uIdcs==idcs(k,2), uIdcs==idcs(k,1)) = edges(k,3);
+    M(uIdcs==idcs(k,1), uIdcs==idcs(k,2)) = 1/edges(k,3);
+    M(uIdcs==idcs(k,2), uIdcs==idcs(k,1)) = 1/edges(k,3);
 end

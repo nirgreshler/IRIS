@@ -3,7 +3,7 @@ close all
 clc
 set(0,'DefaultFigureWindowStyle','docked')
 
-env_name = 'planar_1000';
+env_name = 'syn_9rooms';
 addpath(genpath(pwd))
 
 base_name = fullfile(pwd, 'Graphs');
@@ -81,9 +81,9 @@ for k = 1:nClusters
     coverage = 100*mean(cInspectionPoints{k} > 0);
     idcs = find(cInspectionPoints{k} > 0);
     plot(idcs, cInspectionPoints{k}(idcs), '.-', 'DisplayName', sprintf('Cluster #%d (%d points. Coverage:%.1f%%)', k, sum(pointsInCluster), coverage))
-%     histogram(cInspectionPoints{k}, nInspectionPoints)
+    %     histogram(cInspectionPoints{k}, nInspectionPoints)
 end
-xlabel('Inoection Points')
+xlabel('Inspection Points')
 title(['Coverage per Cluster (', num2str(nClusters), ' Clusters)'])
 legend show
 %% Plot histogram of inspection for each cluster
@@ -102,12 +102,14 @@ for k = 1:nClusters
     xForHist = [];
     for p = 1:nSeenByCluster
         xForHist = [xForHist; repmat(p, nOccurs(p), 1)];
-    end 
+    end
     clusterScores(k) = (coverage/100)*nInspectionPoints/sum(pointsInCluster);
     if nSeenByCluster > 0
         figure; histogram(xForHist, nSeenByCluster);
-        title(sprintf('Cluster %d. %d points. Coverage: %.1f%%\nCoverage score: %.2f',...
-            k, sum(pointsInCluster), coverage, clusterScores(k)))
+        %         title(sprintf('Cluster %d. %d points. Coverage: %.1f%%\nCoverage score: %.2f',...
+        %             k, sum(pointsInCluster), coverage, clusterScores(k)))
+        title(sprintf('Cluster %d. %d points. Coverage: %.1f%%',...
+            k, sum(pointsInCluster), coverage))
     end
 end
 %% Accumulating clusters by score
@@ -118,7 +120,7 @@ coverageSoFar = any(cell2mat(cInspectionPoints(accumIdcs)),1);
 totalPoints = sum(clusters == clusterIdcs(i));
 fprintf('After 1 Cluster (Added #%d): %d points, %.1f%% Coverage.\n', i, totalPoints, mean(coverageSoFar)*100)
 for k = 2:nClusters
-% choose next best cluster
+    % choose next best cluster
     [~, nextIdx] = max(cellfun(@(t)sum(t | coverageSoFar), cInspectionPoints(remainingIdcs)));
     accumIdcs = [accumIdcs remainingIdcs(nextIdx)];
     totalPoints = totalPoints+sum(clusters == clusterIdcs(remainingIdcs(nextIdx)));

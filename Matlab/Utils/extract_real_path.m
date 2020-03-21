@@ -1,8 +1,29 @@
 function realPathId = extract_real_path(G, BG, pathIdBridge)
 % extracts a real path in the original graph, from a path in the bridge
 % graph
-nonVirtIdInBridgePath = pathIdBridge(~BG.graph.Nodes.virtual(pathIdBridge + 1));
-nodeIds = BG.graph.Nodes.id(nonVirtIdInBridgePath + 1);
+
+if isempty(BG.digraph)
+    bgGraph = BG.graph;
+else
+    bgGraph = BG.digraph;
+end
+
+% check if the last node is virtual
+lastVirt = bgGraph.Nodes.virtual(pathIdBridge(end) + 1) == 1;
+if lastVirt
+    lstIdx = pathIdBridge(end) + 1;
+    e = bgGraph.Edges.EndNodes(bgGraph.outedges(lstIdx), :);
+    if e(1) == lstIdx
+        other = e(2);
+    else
+        other = e(1);
+    end
+    % add other to path
+    pathIdBridge = [pathIdBridge other-1];
+end
+
+nonVirtIdInBridgePath = pathIdBridge(~bgGraph.Nodes.virtual(pathIdBridge + 1));
+nodeIds = bgGraph.Nodes.id(nonVirtIdInBridgePath + 1);
 nodeIdx = G.id2idx(nodeIds); % idx in G
 realPathIdx = [];
 for i = 1:length(nodeIdx) - 1
@@ -28,4 +49,5 @@ for i = 1:length(nodeIdx) - 1
     end
 end
 realPathIdx = [realPathIdx tIdx];
+
 realPathId = realPathIdx - 1;
