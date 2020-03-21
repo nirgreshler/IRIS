@@ -3,6 +3,7 @@ function clusters = KMeansClustering(params, points, arg)
 if isscalar(arg)
     nClusters = arg;
 else
+    M = arg;
     D = diag(sum(M));
     L = D-M;
     [~,eigenMat] = eig(L);

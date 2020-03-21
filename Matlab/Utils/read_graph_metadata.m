@@ -18,6 +18,6 @@ inspectionPoints = data(:,2:3);
 data = importdata([base_name, '_params']);
 params = [];
 nParams = numel(data.textdata);
-for k = 1:nParams
+for k = 1:nParams - 1 % last one is obstacles
     params.(data.textdata{k}) = data.data(k);
 end
