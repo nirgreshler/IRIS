@@ -34,6 +34,7 @@ namespace Inspection {
 		SizeType time_forward_kinematics{0};
 		SizeType time_collision_detection{0};
 		RealNum cost;
+		bool directed{false};
 
 		bool in_virtual_graph{false};
 		bool virtual_checked{false};

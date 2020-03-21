@@ -38,7 +38,7 @@ public:
 	void AddCost(const Idx i, const Idx j, const RealNum cost);
 	void AddEdgeCost(const Idx i, const Idx j, const RealNum cost);
 	void AddNeighbor(const Idx i, const Idx j);
-	void AddDirectEdge(const Idx i, const Idx j, const RealNum cost);
+	void AddDirectEdge(const Idx i, const Idx j, const RealNum cost, bool directed);
 	void RemoveDirectEdge(const Idx i, const Idx j);
 
 	Idx Trace(const Idx i, const Idx j) const;

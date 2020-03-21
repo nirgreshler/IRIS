@@ -77,19 +77,22 @@ void TracebackMap::AddNeighbor(const Idx i, const Idx j) {
 		getchar();
 	}
 	neighbors_[i].insert(j);
-	neighbors_[j].insert(i);
+	// neighbors_[j].insert(i);
 }
 
-void TracebackMap::AddDirectEdge(const Idx i, const Idx j, const RealNum cost) {
+void TracebackMap::AddDirectEdge(const Idx i, const Idx j, const RealNum cost, bool directed) {
 	if (map_locked_) {
 		std::cout << "Map is locked!" << std::endl;
 		std::cout << __func__ << " is called!" << std::endl;
 		getchar();
 	}
-	AddTrace(i, j, j);
+	if (!directed)
+		AddTrace(i, j, j);
 	AddTrace(j, i, i);
 	AddEdgeCost(i, j, cost);
 	AddNeighbor(i, j);
+	if (!directed)
+		AddNeighbor(j, i);
 }
 
 void TracebackMap::RemoveDirectEdge(const Idx i, const Idx j) {
