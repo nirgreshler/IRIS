@@ -4,14 +4,14 @@ clc
 clear
 rng(1)
 addpath(genpath(pwd))
-RUN_ORIGINAL = false;
+RUN_ORIGINAL = true;
 
 %% Path settings
 define_path;
 
 %% Environment settings
-env_name = 'drone_big';
-n_vertices = 2000;
+env_name = 'crisp';
+n_vertices = 500;
 filename = [env_name, '_', num2str(n_vertices)];
 search_path = [wsl_path, '/', 'build_', env_name, '/app/search_graph'];
 [obstacles, inspectionPoints, params] = read_graph_metadata(fullfile(base_name, filename));
@@ -23,7 +23,7 @@ params.plotEdges = false;
 %% Clustering settings
 clusteringMethod = 'spectral'; % 'kmeans' / 'spectral' / 'inspection'
 params.maxClusters = 20;
-params.minClusters = 17;
+params.minClusters = 2;
 params.useExpDist = false;
 params.inspectionPoints = inspectionPoints;
 params.obstacles = obstacles;

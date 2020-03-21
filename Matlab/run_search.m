@@ -12,8 +12,8 @@ define_path;
 %% Environment settings
 num_rooms = 9;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
-env_name = 'drone_big';
-n_vertices = 2000;
+env_name = 'crisp';
+n_vertices = 500;
 % filename = ['syn_' num2str(num_rooms) 'rooms'];
 filename = [env_name, '_', num2str(n_vertices)];
 search_path = [wsl_path, '/', 'build_', env_name, '/app/search_graph'];
@@ -34,8 +34,8 @@ params.obstacles = obstacles;
 clustering = Clustering(clusteringMethod, params);
 
 %% IRIS settings
-initial_p = '0.25';
-initial_p_for_bridge = '0.2';
+initial_p = '0.75';
+initial_p_for_bridge = '0.1';
 initial_eps = '0.5';
 tightening_rate = '0';
 method = '0';
@@ -44,7 +44,7 @@ method = '0';
 USE_VIRTUAL_VERTICES = false;
 RUN_IRIS_IN_CLUSTERS = false;
 IRIS_IN_CLUSTER_COV_TH = 0.5;
-minNumBridges = 25;
+minNumBridges = 5;
 %% Create the graphs
 original_graph_path = fullfile(base_name, filename);
 bridge_graph_path = fullfile(base_name, [filename '_bridge']);
