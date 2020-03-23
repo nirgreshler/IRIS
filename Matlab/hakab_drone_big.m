@@ -70,9 +70,49 @@ while exp_idx <= num_exp
     end
 end
 
-avg = mean(res.Variables);
-res15 = res(res.num_clusters > 15, :);
-avg_big_clusters15 = mean(res12.Variables);
+set(findall(gcf,'-property','FontSize'),'FontSize',14)
+title('Coverage per # of Clusters for 9 Rooms')
 
-res20 = res(res.num_clusters > 20, :);
-avg_big_clusters20 = mean(res15.Variables);
+%% Analyze
+minNumClustersToPlot = 0;
+resToPlot = res(1:find(res.runtime_original ~=0, 1, 'last'),:);
+resToPlot = resToPlot(resToPlot.num_clusters > minNumClustersToPlot, :);
+figure;
+hSp(1) = subplot(311); hold on
+plot(100*resToPlot.cov_bridge./resToPlot.cov, '.-')
+med = 100*median(resToPlot.cov_bridge./resToPlot.cov);
+plot([1 size(resToPlot.cov,1)], [1 1].*med, '--', 'LineWidth', 3)
+title('Bridge Coverage / Original Coverage')
+xlabel('Experiment #'); ylabel('Coverage ratio (%)');
+ylim([0 120])
+grid;
+legend('Ratio for each Experiment', sprintf('Median over Experiments (%.2f%%)', med), 'Location', 'Best')
+
+hSp(2) = subplot(312); hold on
+plot(100*resToPlot.runtime_bridge./resToPlot.runtime_original, '.-')
+med = 100*median(resToPlot.runtime_bridge./resToPlot.runtime_original);
+plot([1 size(resToPlot.cov,1)], [1 1].*med, '--', 'LineWidth', 3)
+title('Bridge Runtime / Original Runtime')
+xlabel('Experiment #'); ylabel('Runtime ratio (%)');
+ylim([0 120])
+grid;
+legend('Ratio for each Experiment', sprintf('Median over Experiments (%.2f%%)', med), 'Location', 'Best')
+
+hSp(3) = subplot(313); hold on
+plot(100*resToPlot.cost_bridge./resToPlot.cost_orig, '.-')
+med = 100*median(resToPlot.cost_bridge./resToPlot.cost_orig);
+plot([1 size(resToPlot.cov,1)], [1 1].*med, '--', 'LineWidth', 3)
+title('Bridge Cost / Original Cost')
+xlabel('Experiment #'); ylabel('Cost ratio (%)');
+ylim([0 120])
+grid;
+legend('Ratio for each Experiment', sprintf('Median over Experiments (%.2f%%)', med), 'Location', 'Best')
+
+set(findall(gcf,'-property','FontSize'),'FontSize',14)
+
+if minNumClustersToPlot > 0
+    sgtitle(sprintf('Results for Drone (>%d clusters)', minNumClustersToPlot))
+else
+    sgtitle('Results for 9 Rooms')
+end
+linkaxes(hSp, 'x')
