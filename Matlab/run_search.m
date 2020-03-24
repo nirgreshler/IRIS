@@ -12,7 +12,7 @@ define_path;
 %% Environment settings
 num_rooms = 9;
 env_name = ['syn_' num2str(num_rooms) 'rooms'];
-env_name = 'drone_big';
+% env_name = 'drone_big';
 n_vertices = 2000;
 if contains(env_name, 'syn')
     filename = ['syn_' num2str(num_rooms) 'rooms'];
@@ -37,17 +37,17 @@ params.obstacles = obstacles;
 clustering = Clustering(clusteringMethod, params);
 
 %% IRIS settings
-initial_p = '0.25';
-initial_p_for_bridge = '0.4';
+initial_p = '0.8';
+initial_p_for_bridge = '0.85';
 initial_eps = '0.5';
 tightening_rate = '0';
 method = '0';
 
 %% Algorithm settings
-USE_VIRTUAL_VERTICES = false;
+USE_VIRTUAL_VERTICES = true;
 RUN_IRIS_IN_CLUSTERS = false;
 IRIS_IN_CLUSTER_COV_TH = 0.5;
-minNumBridges = 25;
+minNumBridges = 10;
 %% Create the graphs
 original_graph_path = fullfile(base_name, filename);
 bridge_graph_path = fullfile(base_name, [filename '_bridge']);
@@ -63,10 +63,10 @@ BG.write_graph(bridge_graph_path);
 
 %% Show the graphs
 if contains(filename, 'syn')
-%     PlotEnvironment(params, G, inspectionPoints, obstacles, 'Original Clustered Graph');
-%     scatter(BG.graph.Nodes.x1, BG.graph.Nodes.x2, 'om', 'Linewidth', 1);
-% %     params.plotEdges = true;
-%     PlotEnvironment(params, BG, inspectionPoints, obstacles, 'Bridge Graph');
+    PlotEnvironment(params, G, inspectionPoints, obstacles, 'Original Clustered Graph');
+    scatter(BG.graph.Nodes.x1, BG.graph.Nodes.x2, 'om', 'Linewidth', 1);
+%     params.plotEdges = true;
+    PlotEnvironment(params, BG, inspectionPoints, obstacles, 'Bridge Graph');
     nInpectionPoints = size(inspectionPoints, 1);
 elseif contains(filename, 'drone')
     if contains(filename, 'big')
